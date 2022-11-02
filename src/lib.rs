@@ -1,6 +1,8 @@
 // Copyright 2022, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+pub const OPENXR_MAJOR_VERSION: i32 = 1;
+
 pub(crate) mod manifest;
 pub mod platform;
 pub(crate) mod runtime;
