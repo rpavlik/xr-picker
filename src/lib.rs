@@ -27,6 +27,14 @@ pub enum Error {
     JsonParseError(#[from] serde_json::Error)
 }
 
+#[cfg(unix)]
 mod linux;
+#[cfg(unix)]
 pub use linux::make_platform;
+
+// #[cfg(windows)]
+// mod windows;
+// #[cfg(windows)]
+// pub use windows::make_platform;
+
 pub use platform::Platform;
