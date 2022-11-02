@@ -1,7 +1,7 @@
 // Copyright 2022, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{runtime::BaseRuntime, Error};
+use crate::Error;
 
 pub(crate) trait Runtime {
     fn get_name(&self) -> &str;

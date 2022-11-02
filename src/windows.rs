@@ -1,18 +1,14 @@
 // Copyright 2022, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// use registry::{Hive, Security, iter::keys::KeyRef};
 use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey, RegValue};
 
 use crate::{
     platform::{Platform, PlatformRuntime},
     runtime::BaseRuntime,
-    Error, ACTIVE_RUNTIME_FILENAME, OPENXR, OPENXR_MAJOR_VERSION,
+    Error, OPENXR_MAJOR_VERSION,
 };
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct WindowsRuntime {
@@ -50,16 +46,12 @@ impl WindowsPlatform {
     }
 }
 
-fn make_available_runtimes_key() -> String {
-    r"Software\Khronos Group\".to_owned()
-        + &OPENXR_MAJOR_VERSION.to_string()
-        + r"\AvailableRuntimes"
+fn make_available_runtimes_key() -> PathBuf {
+    Path::new("Software")
+        .join("Khronos")
+        .join(&OPENXR_MAJOR_VERSION.to_string())
+        .join("AvailableRuntimes")
 }
-
-// fn try_reg_key(k: KeyRef) -> Option<PathBuf> {
-//     let k = k.open(Security::Read).ok()?;
-//     k.
-// }
 
 fn maybe_runtime(regkey: &RegKey, kv: (String, RegValue)) -> Option<PathBuf> {
     let (val_name, _) = kv;
@@ -75,10 +67,7 @@ impl Platform for WindowsPlatform {
     fn find_available_runtimes(&self) -> Result<Vec<Self::PlatformRuntimeType>, Error> {
         let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
         let avail = hklm
-            .open_subkey(format!(
-                "Software\\Khronos\\OpenXR\\{}\\AvailableRuntimes",
-                OPENXR_MAJOR_VERSION
-            ))
+            .open_subkey(make_available_runtimes_key())
             .map_err(|e| Error::EnumerationError(format!("Registry read error: {}", e)))?;
 
         let manifest_files = avail
@@ -95,28 +84,7 @@ impl Platform for WindowsPlatform {
                 }
             })
             .collect();
-        //         let regkey = Hive::LocalMachine
-        //             .open(make_available_runtimes_key(), Security::Read)
-        //             .map_err(|e| Error::EnumerationError(format!("Registry read error: {}", e)))?;
-        // regkey.keys().filter_map(|r| r.map(|k| k.))
-        //         let manifest_files = find_potential_manifests_xdg(&self.path_suffix)
-        //             .chain(find_potential_manifests_sysconfdir(&self.path_suffix))
-        //             .filter_map(|p| p.canonicalize().ok().map(|canonical| (p, canonical)))
-        //             .filter_map(
-        //                 |(orig, canonical)| match WindowsRuntime::new(&orig, &canonical) {
-        //                     Ok(r) => Some(r),
-        //                     Err(e) => {
-        //                         eprintln!(
-        //                             "Error when trying to load {} -> {}: {}",
-        //                             orig.display(),
-        //                             canonical.display(),
-        //                             e
-        //                         );
-        //                         None
-        //                     }
-        //                 },
-        //             )
-        //             .collect();
+
         Ok(manifest_files)
     }
 }
