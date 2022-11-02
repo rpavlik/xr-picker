@@ -9,7 +9,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-xdg = "2.4"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0"
+
+[target.'cfg(unix)'.dependencies]
+xdg = "2.4"
+
+[target.'cfg(windows)'.dependencies]
+# registry = "1.2.2"
+winreg = "0.10"

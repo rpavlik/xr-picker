@@ -5,7 +5,8 @@ use std::{path::{Path, PathBuf}, fs};
 
 use crate::{Error, RuntimeManifest};
 
-pub(crate) struct BaseRuntime {
+#[derive(Debug, Clone)]
+pub struct BaseRuntime {
     manifest_path: PathBuf,
     manifest: RuntimeManifest,
 }
