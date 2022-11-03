@@ -11,7 +11,7 @@ pub(crate) mod manifest;
 pub mod platform;
 pub(crate) mod runtime;
 
-use std::io;
+use std::{fmt::Display, io};
 
 pub(crate) use manifest::RuntimeManifest;
 
@@ -42,6 +42,31 @@ pub enum ActiveState {
     ActiveNativeAndNarrowRuntime,
 }
 
+#[cfg(target_pointer_width = "64")]
+impl Display for ActiveState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ActiveState::NotActive => write!(f, ""),
+            ActiveState::ActiveIndependentRuntime => write!(f, "Active"),
+            ActiveState::ActiveNativeRuntime => write!(f, "Active - 64-bit only"),
+            ActiveState::ActiveNarrowRuntime => write!(f, "Active - 32-bit only"),
+            ActiveState::ActiveNativeAndNarrowRuntime => write!(f, "Active"),
+        }
+    }
+}
+#[cfg(target_pointer_width = "32")]
+impl Display for ActiveState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ActiveState::NotActive => write!(f, ""),
+            ActiveState::ActiveIndependentRuntime => write!(f, "Active"),
+            ActiveState::ActiveNativeRuntime => write!(f, "Active"),
+            ActiveState::ActiveNarrowRuntime => panic!("Should be unreachable"),
+            ActiveState::ActiveNativeAndNarrowRuntime => panic!("Should be unreachable"),
+        }
+    }
+}
+
 impl ActiveState {
     #[cfg(windows)]
     pub(crate) fn from_native_and_narrow_activity(
@@ -53,6 +78,16 @@ impl ActiveState {
             (true, false) => Self::ActiveNativeRuntime,
             (false, true) => Self::ActiveNarrowRuntime,
             (false, false) => Self::NotActive,
+        }
+    }
+
+    pub fn provide_make_active_button(&self) -> bool {
+        match self {
+            ActiveState::NotActive => true,
+            ActiveState::ActiveIndependentRuntime => false,
+            ActiveState::ActiveNativeRuntime => true,
+            ActiveState::ActiveNarrowRuntime => true,
+            ActiveState::ActiveNativeAndNarrowRuntime => false,
         }
     }
 }

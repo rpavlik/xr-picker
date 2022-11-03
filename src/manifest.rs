@@ -21,7 +21,30 @@ pub(crate) trait GenericManifest {
 
     /// Check the file format version
     fn is_file_format_version_ok(&self) -> bool;
+
+    fn describe_manifest(&self, manifest_path: &Path) -> String {
+        let manifest = manifest_path.display();
+        if self.uses_search_path() {
+            format!(
+                "{} -> {} in the dynamic library search path",
+                manifest,
+                self.library_path()
+            )
+        } else {
+            if self.library_relative_to_manifest() {
+                format!(
+                    "{} -> {} relative to the manifest",
+                    manifest,
+                    self.library_path()
+                )
+            } else {
+                format!("{} -> {}", manifest, self.library_path())
+            }
+        }
+    }
 }
+
+use std::path::Path;
 
 use serde::Deserialize;
 

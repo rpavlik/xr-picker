@@ -1,7 +1,7 @@
 // Copyright 2022, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::{ActiveState, Error};
 
@@ -13,6 +13,11 @@ pub trait PlatformRuntime {
     ///
     /// Not promised to be unique, though!
     fn get_runtime_name(&self) -> String;
+
+    fn get_manifests(&self) -> Vec<&Path>;
+    fn get_libraries(&self) -> Vec<PathBuf>;
+
+    fn describe(&self) -> String;
 }
 
 pub trait Platform {

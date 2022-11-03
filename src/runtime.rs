@@ -54,4 +54,23 @@ impl BaseRuntime {
             .unwrap_or_else(|| self.manifest.library_path())
             .to_owned()
     }
+
+    pub(crate) fn resolve_library_path(&self) -> PathBuf {
+        let notcanon = self
+            .manifest_path
+            .parent()
+            .expect("files always have parents")
+            .join(self.manifest.library_path());
+        notcanon.canonicalize().unwrap_or(notcanon)
+    }
+}
+
+impl GenericManifest for BaseRuntime {
+    fn library_path(&self) -> &str {
+        self.manifest.library_path()
+    }
+
+    fn is_file_format_version_ok(&self) -> bool {
+        self.manifest.is_file_format_version_ok()
+    }
 }

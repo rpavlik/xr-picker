@@ -4,13 +4,14 @@
 use xdg::{BaseDirectories, BaseDirectoriesError};
 
 use crate::{
+    manifest::GenericManifest,
     platform::{Platform, PlatformRuntime},
     runtime::BaseRuntime,
     ActiveState, Error, ACTIVE_RUNTIME_FILENAME, OPENXR, OPENXR_MAJOR_VERSION,
 };
 use std::{
     fs,
-    iter::once,
+    iter::{once, Once},
     os::unix,
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
@@ -88,6 +89,24 @@ impl PlatformRuntime for LinuxRuntime {
 
     fn get_runtime_name(&self) -> String {
         self.base.get_runtime_name()
+    }
+
+    fn get_manifests(&self) -> Vec<&Path> {
+        vec![self.base.get_manifest_path()]
+    }
+
+    fn get_libraries(&self) -> Vec<PathBuf> {
+        let path = self.base.resolve_library_path();
+        vec![path]
+    }
+
+    fn describe(&self) -> String {
+        let description = self.base.describe_manifest(self.base.get_manifest_path());
+        if self.orig_path != self.base.get_manifest_path() {
+            format!("{} -> {}", self.orig_path.display(), description)
+        } else {
+            description
+        }
     }
 }
 
