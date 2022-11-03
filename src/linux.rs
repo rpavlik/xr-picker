@@ -4,13 +4,42 @@
 use crate::{
     platform::{Platform, PlatformRuntime},
     runtime::BaseRuntime,
-    Error, ACTIVE_RUNTIME_FILENAME, OPENXR, OPENXR_MAJOR_VERSION,
+    ActiveState, Error, ACTIVE_RUNTIME_FILENAME, OPENXR, OPENXR_MAJOR_VERSION,
 };
 use std::{
-    fs,
+    iter::once,
     path::{Path, PathBuf},
 };
 
+const ETC: &str = "/etc";
+fn make_path_suffix() -> PathBuf {
+    Path::new(OPENXR).join(OPENXR_MAJOR_VERSION.to_string())
+}
+
+fn make_sysconfdir(suffix: &Path) -> PathBuf {
+    Path::new(ETC).join(suffix)
+}
+
+fn find_active_runtime(suffix: &Path) -> Option<PathBuf> {
+    let xdg_dirs = xdg::BaseDirectories::new().ok()?;
+    let xdg_iter = xdg_dirs
+        .list_config_files_once(suffix.join(ACTIVE_RUNTIME_FILENAME))
+        .into_iter();
+    let sysconfdir_iter = once(make_sysconfdir(suffix).join(ACTIVE_RUNTIME_FILENAME));
+
+    xdg_iter
+        .chain(sysconfdir_iter)
+        .filter(|p| {
+            p.metadata()
+                .map(|m| m.is_file() || m.is_symlink())
+                .ok()
+                .unwrap_or_default()
+        })
+        .filter_map(|p| p.canonicalize().ok())
+        .next()
+}
+
+#[derive(Debug)]
 pub struct LinuxRuntime {
     base: BaseRuntime,
     orig_path: PathBuf,
@@ -27,12 +56,23 @@ impl LinuxRuntime {
 }
 
 impl PlatformRuntime for LinuxRuntime {
-    fn is_active(&self) -> bool {
+    fn get_active_state(&self) -> ActiveState {
+        let is_active = find_active_runtime(&make_path_suffix())
+            .map(|active_path| self.base.get_manifest_path() == active_path)
+            .unwrap_or_default();
+
+        match is_active {
+            true => ActiveState::ActiveIndependentRuntime,
+            false => ActiveState::NotActive,
+        }
+    }
+
+    fn make_active(&self) -> Result<(), Error> {
         todo!()
     }
 
-    fn make_active(&self) {
-        todo!()
+    fn get_runtime_name(&self) -> String {
+        self.base.get_runtime_name()
     }
 }
 
@@ -40,37 +80,9 @@ pub struct LinuxPlatform {
     path_suffix: PathBuf,
 }
 
-const ETC: &str = "/etc";
-fn make_path_suffix() -> PathBuf {
-    Path::new(OPENXR).join(OPENXR_MAJOR_VERSION.to_string())
-}
-
-fn make_sysconfdir(suffix: &Path) -> PathBuf {
-    Path::new(ETC).join(suffix)
-}
-
-fn find_xdg_active_runtime(suffix: &Path) -> Option<PathBuf> {
-    let xdg_dirs = xdg::BaseDirectories::new().ok()?;
-    let xdg_iter = xdg_dirs
-        .list_config_files_once(suffix.join(ACTIVE_RUNTIME_FILENAME))
-        .into_iter();
-    xdg_iter
-        .filter(|p| {
-            p.metadata()
-                .map(|m| m.is_file() || m.is_symlink())
-                .ok()
-                .unwrap_or(false)
-        })
-        .next()
-}
-
 impl LinuxPlatform {
     fn new() -> Self {
         let path_suffix = make_path_suffix();
-        // let sys_conf_dir = make_sysconfdir(&path_suffix);
-
-        // let xdg_dirs = xdg::BaseDirectories::new().ok();
-        // let xdg_iter = xdg_dirs.list_config_files(&self.path_suffix).into_iter();
         Self { path_suffix }
     }
 }
@@ -82,6 +94,7 @@ fn find_potential_manifests_xdg(suffix: &Path) -> impl Iterator<Item = PathBuf> 
         .into_iter()
         .flat_map(move |xdg_dirs| xdg_dirs.list_config_files(&suffix).into_iter())
 }
+
 fn find_potential_manifests_sysconfdir(suffix: &Path) -> impl Iterator<Item = PathBuf> {
     make_sysconfdir(suffix)
         .read_dir()
@@ -100,6 +113,7 @@ fn find_potential_manifests_sysconfdir(suffix: &Path) -> impl Iterator<Item = Pa
                 })
         })
 }
+
 impl Platform for LinuxPlatform {
     type PlatformRuntimeType = LinuxRuntime;
     fn find_available_runtimes(&self) -> Result<Vec<Self::PlatformRuntimeType>, Error> {
@@ -122,6 +136,12 @@ impl Platform for LinuxPlatform {
             )
             .collect();
         Ok(manifest_files)
+    }
+
+    fn get_active_runtime_manifests(&self) -> Vec<PathBuf> {
+        find_active_runtime(&make_path_suffix())
+            .into_iter()
+            .collect()
     }
 }
 

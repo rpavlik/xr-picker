@@ -29,17 +29,18 @@ use serde::Deserialize;
 pub(crate) struct RuntimeFunctions {
     xrNegotiateLoaderRuntimeInterface: Option<String>,
 }
+
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Runtime {
-    library_path: String,
-    name: Option<String>,
+    pub(crate) library_path: String,
+    pub(crate) name: Option<String>,
     functions: Option<RuntimeFunctions>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct RuntimeManifest {
     file_format_version: String,
-    runtime: Runtime,
+    pub(crate) runtime: Runtime,
 }
 
 impl GenericManifest for RuntimeManifest {

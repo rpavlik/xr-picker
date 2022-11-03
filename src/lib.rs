@@ -25,14 +25,18 @@ pub enum Error {
 
     #[error("JSON parsing error")]
     JsonParseError(#[from] serde_json::Error),
+
+    #[error("Manifest file format version mismatch")]
+    ManifestVersionMismatch,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum ActiveState {
     NotActive,
+    ActiveIndependentRuntime,
     ActiveNativeRuntime,
     ActiveNarrowRuntime,
-    ActiveNativeAndNarrow,
+    ActiveNativeAndNarrowRuntime,
 }
 
 impl ActiveState {
@@ -41,7 +45,7 @@ impl ActiveState {
         is_narrow_active: bool,
     ) -> Self {
         match (is_native_active, is_narrow_active) {
-            (true, true) => Self::ActiveNativeAndNarrow,
+            (true, true) => Self::ActiveNativeAndNarrowRuntime,
             (true, false) => Self::ActiveNativeRuntime,
             (false, true) => Self::ActiveNarrowRuntime,
             (false, false) => Self::NotActive,
