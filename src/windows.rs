@@ -76,16 +76,6 @@ impl WindowsRuntime {
     }
 }
 
-fn check_active(active_runtime_manifest: Option<&Path>, runtime: Option<&BaseRuntime>) -> bool {
-    match active_runtime_manifest {
-        Some(active_manifest) => match runtime {
-            Some(r) => r.get_manifest_path() == active_manifest,
-            None => false,
-        },
-        None => false,
-    }
-}
-
 impl PlatformRuntime for WindowsRuntime {
     fn make_active(&self) -> Result<(), Error> {
         todo!()
@@ -151,6 +141,15 @@ pub struct WindowsActiveRuntimeData {
     narrow: Option<PathBuf>,
 }
 
+fn check_active(active_runtime_manifest: &Option<PathBuf>, runtime: &Option<BaseRuntime>) -> bool {
+    match active_runtime_manifest.as_deref() {
+        Some(active_manifest) => match runtime {
+            Some(r) => r.get_manifest_path() == active_manifest,
+            None => false,
+        },
+        None => false,
+    }
+}
 impl WindowsActiveRuntimeData {
     fn new() -> Self {
         let native_active = get_active_runtime_manifest_path(make_prefix_key_native());
@@ -164,10 +163,10 @@ impl WindowsActiveRuntimeData {
         }
     }
 
-    fn matches(&self, runtime: &WindowsRuntime) -> ActiveState {
-        let is_native_active = check_active(self.native.as_deref(), runtime.base.as_ref());
+    fn check_runtime(&self, runtime: &WindowsRuntime) -> ActiveState {
+        let is_native_active = check_active(&self.native, &runtime.base);
+        let is_narrow_active = check_active(&self.narrow, &runtime.base_narrow);
 
-        let is_narrow_active = check_active(self.narrow.as_deref(), runtime.base_narrow.as_ref());
         ActiveState::from_native_and_narrow_activity(is_native_active, is_narrow_active)
     }
 }
@@ -269,7 +268,7 @@ impl Platform for WindowsPlatform {
         runtime: &Self::PlatformRuntimeType,
         active_data: &Self::PlatformActiveData,
     ) -> ActiveState {
-        active_data.matches(runtime)
+        active_data.check_runtime(runtime)
     }
 }
 
