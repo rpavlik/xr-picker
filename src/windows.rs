@@ -13,7 +13,7 @@ use std::{
     collections::{hash_map::RandomState, HashMap, HashSet},
     path::{Path, PathBuf},
 };
-use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey, RegValue};
+use winreg::{enums::{HKEY_LOCAL_MACHINE, KEY_WRITE}, RegKey, RegValue};
 
 #[derive(Debug, Clone)]
 pub struct WindowsRuntime {
@@ -90,7 +90,7 @@ impl PlatformRuntime for WindowsRuntime {
         ) -> Result<(), Error> {
             if let Some(path) = path {
                 if let Some(runtime) = runtime {
-                    let base = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey(&path)?;
+                    let base = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey_with_flags(&path, KEY_WRITE)?;
                     base.set_value(ACTIVE_RUNTIME, &runtime.get_manifest_path().as_os_str())?;
                 }
             }
