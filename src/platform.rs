@@ -1,15 +1,15 @@
 // Copyright 2022, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::Error;
+use crate::{ActiveState, Error};
 
 pub(crate) trait Runtime {
-    fn get_name(&self) -> &str;
+    fn get_human_readable_name(&self) -> String;
 }
 
 pub trait PlatformRuntime {
-    fn is_active(&self) -> bool;
-    fn make_active(&self);
+    fn get_active_state(&self) -> ActiveState;
+    fn make_active(&self) -> Result<(), Error>;
 }
 
 pub trait Platform {

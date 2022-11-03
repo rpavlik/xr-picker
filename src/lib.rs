@@ -27,6 +27,28 @@ pub enum Error {
     JsonParseError(#[from] serde_json::Error),
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum ActiveState {
+    NotActive,
+    ActiveNativeRuntime,
+    ActiveNarrowRuntime,
+    ActiveNativeAndNarrow,
+}
+
+impl ActiveState {
+    pub(crate) fn from_native_and_narrow_activity(
+        is_native_active: bool,
+        is_narrow_active: bool,
+    ) -> Self {
+        match (is_native_active, is_narrow_active) {
+            (true, true) => Self::ActiveNativeAndNarrow,
+            (true, false) => Self::ActiveNativeRuntime,
+            (false, true) => Self::ActiveNarrowRuntime,
+            (false, false) => Self::NotActive,
+        }
+    }
+}
+
 #[cfg(unix)]
 mod linux;
 #[cfg(unix)]

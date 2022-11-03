@@ -4,7 +4,7 @@
 use crate::{
     platform::{Platform, PlatformRuntime},
     runtime::BaseRuntime,
-    Error, OPENXR, OPENXR_MAJOR_VERSION,
+    ActiveState, Error, OPENXR, OPENXR_MAJOR_VERSION,
 };
 use special_folder::SpecialFolder;
 use std::{
@@ -21,6 +21,8 @@ pub struct WindowsRuntime {
 
 const WINMR_JSON_NAME: &str = "MixedRealityRuntime.json";
 
+const AVAILABLE_RUNTIMES: &str = "AvailableRuntimes";
+const ACTIVE_RUNTIME: &str = "ActiveRuntime";
 fn system_dir_native() -> Option<PathBuf> {
     SpecialFolder::System.get()
 }
@@ -58,6 +60,14 @@ fn make_prefix_key_narrow() -> Option<PathBuf> {
     None
 }
 
+fn get_active_runtime_manifest_path(prefix: PathBuf) -> Option<PathBuf> {
+    let base = RegKey::predef(HKEY_LOCAL_MACHINE)
+        .open_subkey(&prefix)
+        .ok()?;
+    let val: String = base.get_value(ACTIVE_RUNTIME).ok()?;
+    Some(Path::new(&val).to_path_buf())
+}
+
 impl WindowsRuntime {
     fn new(path: Option<&Path>, narrow_path: Option<&Path>) -> Result<Self, Error> {
         let base = path.map(|p| BaseRuntime::new(p)).transpose()?;
@@ -66,46 +76,38 @@ impl WindowsRuntime {
     }
 }
 
+fn check_active(active_runtime_manifest: Option<&Path>, runtime: Option<&BaseRuntime>) -> bool {
+    match active_runtime_manifest {
+        Some(active_manifest) => match runtime {
+            Some(r) => r.get_manifest_path() == active_manifest,
+            None => false,
+        },
+        None => false,
+    }
+}
 impl PlatformRuntime for WindowsRuntime {
-    fn is_active(&self) -> bool {
+    fn get_active_state(&self) -> ActiveState {
+        let native_active = get_active_runtime_manifest_path(make_prefix_key_native());
+        let narrow_active = make_prefix_key_narrow()
+            .into_iter()
+            .filter_map(|p| get_active_runtime_manifest_path(p))
+            .next();
+
+        let is_native_active = check_active(
+            native_active.as_ref().map(|p| p.as_path()),
+            self.base.as_ref(),
+        );
+
+        let is_narrow_active = check_active(
+            narrow_active.as_ref().map(|p| p.as_path()),
+            self.base_narrow.as_ref(),
+        );
+        ActiveState::from_native_and_narrow_activity(is_native_active, is_narrow_active)
+    }
+
+    fn make_active(&self) -> Result<(), Error> {
         todo!()
     }
-
-    fn make_active(&self) {
-        todo!()
-    }
-}
-
-pub struct WindowsPlatform;
-
-impl WindowsPlatform {
-    fn new() -> Self {
-        Self
-    }
-}
-
-const AVAILABLE_RUNTIMES: &str = "AvailableRuntimes";
-
-fn maybe_runtime(regkey: &RegKey, kv: (String, RegValue)) -> Option<PathBuf> {
-    let (val_name, _) = kv;
-    let v: u32 = regkey.get_value(&val_name).ok()?;
-    if v == 0 {
-        return Some(Path::new(&val_name).to_owned());
-    }
-    None
-}
-
-fn enumerate_reg_runtimes(base_key: &Path) -> Result<Vec<PathBuf>, Error> {
-    let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-    let avail = hklm
-        .open_subkey(base_key.to_str().unwrap())
-        .map_err(|e| Error::EnumerationError(format!("Registry read error: {}", e)))?;
-
-    let manifest_files = avail.enum_values().filter_map(|x| {
-        let x = x.ok()?;
-        maybe_runtime(&avail, x)
-    });
-    Ok(manifest_files.collect())
 }
 
 #[derive(Default)]
@@ -152,6 +154,35 @@ impl Into<Vec<WindowsRuntime>> for RuntimeCollection {
     }
 }
 
+pub struct WindowsPlatform;
+
+impl WindowsPlatform {
+    fn new() -> Self {
+        Self
+    }
+}
+
+fn maybe_runtime(regkey: &RegKey, kv: (String, RegValue)) -> Option<PathBuf> {
+    let (val_name, _) = kv;
+    let v: u32 = regkey.get_value(&val_name).ok()?;
+    if v == 0 {
+        return Some(Path::new(&val_name).to_owned());
+    }
+    None
+}
+
+fn enumerate_reg_runtimes(base_key: &Path) -> Result<Vec<PathBuf>, Error> {
+    let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+    let avail = hklm
+        .open_subkey(base_key.to_str().unwrap())
+        .map_err(|e| Error::EnumerationError(format!("Registry read error: {}", e)))?;
+
+    let manifest_files = avail.enum_values().filter_map(|x| {
+        let x = x.ok()?;
+        maybe_runtime(&avail, x)
+    });
+    Ok(manifest_files.collect())
+}
 impl Platform for WindowsPlatform {
     type PlatformRuntimeType = WindowsRuntime;
     fn find_available_runtimes(&self) -> Result<Vec<Self::PlatformRuntimeType>, Error> {

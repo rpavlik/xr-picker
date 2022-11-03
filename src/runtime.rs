@@ -23,4 +23,11 @@ impl BaseRuntime {
             manifest,
         })
     }
+
+    pub(crate) fn get_manifest_path(&self) -> &Path {
+        &self.manifest_path
+    }
+    pub(crate) fn get_manifest_data(&self) -> &RuntimeManifest {
+        &self.manifest
+    }
 }
