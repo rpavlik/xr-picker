@@ -70,8 +70,8 @@ fn get_active_runtime_manifest_path(prefix: PathBuf) -> Option<PathBuf> {
 
 impl WindowsRuntime {
     fn new(path: Option<&Path>, narrow_path: Option<&Path>) -> Result<Self, Error> {
-        let base = path.map(|p| BaseRuntime::new(p)).transpose()?;
-        let base_narrow = narrow_path.map(|p| BaseRuntime::new(p)).transpose()?;
+        let base = path.map(BaseRuntime::new).transpose()?;
+        let base_narrow = narrow_path.map(BaseRuntime::new).transpose()?;
         Ok(WindowsRuntime { base, base_narrow })
     }
 }
@@ -85,6 +85,7 @@ fn check_active(active_runtime_manifest: Option<&Path>, runtime: Option<&BaseRun
         None => false,
     }
 }
+
 impl PlatformRuntime for WindowsRuntime {
     fn make_active(&self) -> Result<(), Error> {
         todo!()
@@ -100,6 +101,7 @@ impl PlatformRuntime for WindowsRuntime {
     }
 }
 
+/// Little helper for accumulating runtimes and coalescing their different bitnesses.
 #[derive(Default)]
 struct RuntimeCollection {
     runtimes: Vec<WindowsRuntime>,
@@ -138,9 +140,9 @@ impl RuntimeCollection {
     }
 }
 
-impl Into<Vec<WindowsRuntime>> for RuntimeCollection {
-    fn into(self) -> Vec<WindowsRuntime> {
-        self.runtimes
+impl From<RuntimeCollection> for Vec<WindowsRuntime> {
+    fn from(val: RuntimeCollection) -> Self {
+        val.runtimes
     }
 }
 
@@ -154,7 +156,7 @@ impl WindowsActiveRuntimeData {
         let native_active = get_active_runtime_manifest_path(make_prefix_key_native());
         let narrow_active = make_prefix_key_narrow()
             .into_iter()
-            .filter_map(|p| get_active_runtime_manifest_path(p))
+            .filter_map(get_active_runtime_manifest_path)
             .next();
         Self {
             native: native_active,
@@ -163,26 +165,10 @@ impl WindowsActiveRuntimeData {
     }
 
     fn matches(&self, runtime: &WindowsRuntime) -> ActiveState {
-        let is_native_active = check_active(
-            self.native.as_ref().map(|p| p.as_path()),
-            runtime.base.as_ref(),
-        );
+        let is_native_active = check_active(self.native.as_deref(), runtime.base.as_ref());
 
-        let is_narrow_active = check_active(
-            self.narrow.as_ref().map(|p| p.as_path()),
-            runtime.base_narrow.as_ref(),
-        );
+        let is_narrow_active = check_active(self.narrow.as_deref(), runtime.base_narrow.as_ref());
         ActiveState::from_native_and_narrow_activity(is_native_active, is_narrow_active)
-    }
-}
-
-impl<'a> Into<Vec<&'a Path>> for &'a WindowsActiveRuntimeData {
-    fn into(self) -> Vec<&'a Path> {
-        self.native
-            .iter()
-            .chain(self.narrow.iter())
-            .map(|p| p.as_path())
-            .collect()
     }
 }
 
