@@ -20,8 +20,8 @@ pub enum Error {
     #[error("Failure while attempting to enumerate available runtimes: {0}")]
     EnumerationError(String),
 
-    #[error("IO error during manifest read")]
-    ManifestReadError(#[from] io::Error),
+    #[error("IO error")]
+    IoError(#[from] io::Error),
 
     #[error("JSON parsing error")]
     JsonParseError(#[from] serde_json::Error),

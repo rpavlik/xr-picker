@@ -62,6 +62,7 @@ fn update<T: Platform>(
     match result_or_state {
         Ok(state) => {
             let mut repopulate = false;
+            let mut new_state = None;
             egui::CentralPanel::default().show(ctx, |ui| {
                 ui.heading("OpenXR Runtime Picker");
 
@@ -82,6 +83,7 @@ fn update<T: Platform>(
                                 if ui.button("Make active").clicked() {
                                     if let Err(e) = runtime.make_active() {
                                         eprintln!("error in make_active: {:?}", e);
+                                        new_state = Some(Err(e));
                                     }
                                     repopulate = true;
                                 }
@@ -91,36 +93,30 @@ fn update<T: Platform>(
                             ui.label(runtime.get_runtime_name());
                             ui.label(format!("{}", runtime_active_state));
                             ui.label(runtime.describe());
-                            // ui.vertical(|ui| {
-                            //     for manifest in runtime.get_manifests() {
-                            //         ui.label(format!("{}", manifest.display()));
-                            //     }
-                            // });
-                            // ui.vertical(|ui| {
-                            //     for library in runtime.get_libraries() {
-                            //         ui.label(format!("{}", library.display()));
-                            //     }
-                            // });
                             ui.end_row();
-                            // ui.horizontal(|ui| {
-                            //     ui.label(format!(
-                            //         "{:?}",
-                            //         platform.get_runtime_active_state(runtime, &state.active_data)
-                            //     ));
-                            //     ui.label(runtime.get_runtime_name());
-                            // });
                         }
                     });
             });
+            if let Some(new_state) = new_state {
+                return new_state;
+            }
             if repopulate {
                 return state.refresh(platform);
             }
             Ok(state)
         }
         Err(e) => {
+            let mut repopulate = false;
             egui::CentralPanel::default().show(ctx, |ui| {
                 ui.heading(format!("ERROR! {}", e));
+                if ui.button("Refresh").clicked() {
+                    repopulate = true;
+                }
             });
+
+            if repopulate {
+                return InnerState::new(platform);
+            }
             Err(e)
         }
     }
