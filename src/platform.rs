@@ -18,6 +18,8 @@ pub trait PlatformRuntime {
     fn get_libraries(&self) -> Vec<PathBuf>;
 
     fn describe(&self) -> String;
+
+    // fn uniqueness_key(&self) -> PathBuf;
 }
 
 pub trait Platform {

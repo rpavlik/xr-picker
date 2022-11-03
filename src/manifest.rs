@@ -30,16 +30,14 @@ pub(crate) trait GenericManifest {
                 manifest,
                 self.library_path()
             )
+        } else if self.library_relative_to_manifest() {
+            format!(
+                "{} -> {} relative to the manifest",
+                manifest,
+                self.library_path()
+            )
         } else {
-            if self.library_relative_to_manifest() {
-                format!(
-                    "{} -> {} relative to the manifest",
-                    manifest,
-                    self.library_path()
-                )
-            } else {
-                format!("{} -> {}", manifest, self.library_path())
-            }
+            format!("{} -> {}", manifest, self.library_path())
         }
     }
 }
@@ -48,20 +46,20 @@ use std::path::Path;
 
 use serde::Deserialize;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub(crate) struct RuntimeFunctions {
     #[serde(rename = "xrNegotiateLoaderRuntimeInterface")]
     pub(crate) xr_negotiate_loader_runtime_interface: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub(crate) struct Runtime {
     pub(crate) library_path: String,
     pub(crate) name: Option<String>,
     pub(crate) functions: Option<RuntimeFunctions>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub(crate) struct RuntimeManifest {
     file_format_version: String,
     pub(crate) runtime: Runtime,

@@ -11,7 +11,7 @@ use crate::{
 };
 use std::{
     fs,
-    iter::{once, Once},
+    iter::once,
     os::unix,
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
@@ -27,7 +27,7 @@ fn make_sysconfdir(suffix: &Path) -> PathBuf {
     Path::new(ETC).join(suffix)
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct LinuxRuntime {
     base: BaseRuntime,
     orig_path: PathBuf,
@@ -208,6 +208,8 @@ impl Platform for LinuxPlatform {
                     }
                 },
             )
+            // .unique_by(|r| r.base.get_manifest_path().to_owned())
+            // .sorted_by_cached_key(|r| r.base.resolve_library_path())
             .collect();
         Ok(manifest_files)
     }

@@ -8,7 +8,7 @@ use std::{
 
 use crate::{manifest::GenericManifest, Error, RuntimeManifest};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BaseRuntime {
     manifest_path: PathBuf,
     manifest: RuntimeManifest,

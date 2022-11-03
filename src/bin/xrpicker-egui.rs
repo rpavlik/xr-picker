@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use eframe::egui;
+use itertools::Itertools;
 use xrpicker::{make_platform, platform::PlatformRuntime, Error, Platform};
 
 struct InnerState<T: Platform> {
@@ -13,7 +14,27 @@ impl<T: Platform> InnerState<T> {
     fn new(platform: &T) -> Result<Self, Error> {
         let runtimes = platform.find_available_runtimes()?;
         let active_data = platform.get_active_data();
-        Ok(InnerState {
+        Ok(Self {
+            runtimes,
+            active_data,
+        })
+    }
+
+    fn refresh(self, platform: &T) -> Result<Self, Error> {
+        let new_runtimes = platform.find_available_runtimes()?;
+        let active_data = platform.get_active_data();
+        let runtimes = self
+            .runtimes
+            .into_iter()
+            .chain(new_runtimes.into_iter())
+            .unique_by(|r| {
+                r.get_manifests()
+                    .into_iter()
+                    .map(|p| p.to_owned())
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        Ok(Self {
             runtimes,
             active_data,
         })
@@ -92,15 +113,15 @@ fn update<T: Platform>(
                     });
             });
             if repopulate {
-                return InnerState::new(platform);
+                return state.refresh(platform);
             }
-            return Ok(state);
+            Ok(state)
         }
         Err(e) => {
             egui::CentralPanel::default().show(ctx, |ui| {
                 ui.heading(format!("ERROR! {}", e));
             });
-            return Err(e);
+            Err(e)
         }
     }
 }
