@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::{
+    manifest::GenericManifest,
     platform::{Platform, PlatformRuntime},
     runtime::BaseRuntime,
     ActiveState, Error, OPENXR, OPENXR_MAJOR_VERSION,
 };
+use itertools::Itertools;
 use special_folder::SpecialFolder;
 use std::{
     collections::{hash_map::RandomState, HashMap, HashSet},
@@ -74,20 +76,50 @@ impl WindowsRuntime {
         let base_narrow = narrow_path.map(BaseRuntime::new).transpose()?;
         Ok(WindowsRuntime { base, base_narrow })
     }
+
+    fn runtimes(&self) -> impl Iterator<Item = &BaseRuntime> {
+        self.base.iter().chain(self.base_narrow.iter())
+    }
 }
 
 impl PlatformRuntime for WindowsRuntime {
     fn make_active(&self) -> Result<(), Error> {
-        todo!()
+        fn try_set_active(
+            path: Option<PathBuf>,
+            runtime: &Option<BaseRuntime>,
+        ) -> Result<(), Error> {
+            if let Some(path) = path {
+                if let Some(runtime) = runtime {
+                    let base = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey(&path)?;
+                    base.set_value(ACTIVE_RUNTIME, &runtime.get_manifest_path().as_os_str())?;
+                }
+            }
+            Ok(())
+        }
+        try_set_active(Some(make_prefix_key_native()), &self.base)?;
+        try_set_active(make_prefix_key_narrow(), &self.base_narrow)?;
+        Ok(())
     }
 
     fn get_runtime_name(&self) -> String {
-        self.base
-            .iter()
-            .chain(self.base_narrow.iter())
+        self.runtimes()
             .map(|r| r.get_runtime_name())
             .next()
             .expect("At least one of the runtimes will be Some")
+    }
+
+    fn get_manifests(&self) -> Vec<&Path> {
+        self.runtimes().map(|r| r.get_manifest_path()).collect()
+    }
+
+    fn get_libraries(&self) -> Vec<PathBuf> {
+        self.runtimes().map(|r| r.resolve_library_path()).collect()
+    }
+
+    fn describe(&self) -> String {
+        self.runtimes()
+            .map(|r| r.describe_manifest(r.get_manifest_path()))
+            .join("\n")
     }
 }
 
