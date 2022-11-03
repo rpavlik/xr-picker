@@ -28,6 +28,9 @@ pub enum Error {
 
     #[error("Manifest file format version mismatch")]
     ManifestVersionMismatch,
+
+    #[error("Error when trying to set active runtime: {0}")]
+    SetActiveError(String),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -40,6 +43,7 @@ pub enum ActiveState {
 }
 
 impl ActiveState {
+    #[cfg(windows)]
     pub(crate) fn from_native_and_narrow_activity(
         is_native_active: bool,
         is_narrow_active: bool,

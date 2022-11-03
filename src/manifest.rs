@@ -27,14 +27,15 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct RuntimeFunctions {
-    xrNegotiateLoaderRuntimeInterface: Option<String>,
+    #[serde(rename = "xrNegotiateLoaderRuntimeInterface")]
+    pub(crate) xr_negotiate_loader_runtime_interface: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct Runtime {
     pub(crate) library_path: String,
     pub(crate) name: Option<String>,
-    functions: Option<RuntimeFunctions>,
+    pub(crate) functions: Option<RuntimeFunctions>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

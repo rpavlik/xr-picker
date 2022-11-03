@@ -1,14 +1,19 @@
 // Copyright 2022, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use xdg::{BaseDirectories, BaseDirectoriesError};
+
 use crate::{
     platform::{Platform, PlatformRuntime},
     runtime::BaseRuntime,
     ActiveState, Error, ACTIVE_RUNTIME_FILENAME, OPENXR, OPENXR_MAJOR_VERSION,
 };
 use std::{
+    fs,
     iter::once,
+    os::unix,
     path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 const ETC: &str = "/etc";
@@ -39,7 +44,46 @@ impl LinuxRuntime {
 
 impl PlatformRuntime for LinuxRuntime {
     fn make_active(&self) -> Result<(), Error> {
-        todo!()
+        fn convert_err(e: BaseDirectoriesError) -> Error {
+            Error::SetActiveError(e.to_string())
+        }
+        let dirs = BaseDirectories::new().map_err(convert_err)?;
+        let suffix = make_path_suffix();
+        let path = dirs.place_config_file(suffix.join(ACTIVE_RUNTIME_FILENAME))?;
+
+        // First move the old file out of the way, if any.
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let move_target =
+            dirs.place_config_file(suffix.join(format!("old_active_runtime{}.json", timestamp)))?;
+
+        match fs::rename(&path, &move_target) {
+            Ok(_) => {
+                // Only keep our renamed file if it wasn't a symlink
+                if let Ok(m) = move_target.symlink_metadata() {
+                    if m.is_symlink() && fs::remove_file(&move_target).is_err() {
+                        // that's ok
+                        eprintln!(
+                            "Got an error trying to remove an apparently-symlink {}",
+                            move_target.display()
+                        )
+                    }
+                }
+            }
+            Err(e) => {
+                // ignore and hope it meant there was just nothing to move
+                eprintln!(
+                    "Got an error trying to rename {} to {}: {}",
+                    path.display(),
+                    move_target.display(),
+                    e
+                );
+            }
+        }
+        unix::fs::symlink(self.base.get_manifest_path(), &path)?;
+        Ok(())
     }
 
     fn get_runtime_name(&self) -> String {
@@ -60,7 +104,7 @@ impl LinuxPlatform {
 
 fn find_potential_manifests_xdg(suffix: &Path) -> impl Iterator<Item = PathBuf> {
     let suffix = suffix.to_owned();
-    xdg::BaseDirectories::new()
+    BaseDirectories::new()
         .ok()
         .into_iter()
         .flat_map(move |xdg_dirs| xdg_dirs.list_config_files(&suffix).into_iter())
@@ -90,7 +134,7 @@ pub struct LinuxActiveRuntimeData(Option<PathBuf>);
 impl LinuxActiveRuntimeData {
     fn new() -> Self {
         let suffix = (&make_path_suffix()).join(ACTIVE_RUNTIME_FILENAME);
-        let xdg_iter = xdg::BaseDirectories::new()
+        let xdg_iter = BaseDirectories::new()
             .ok()
             .into_iter()
             .flat_map(|d| d.find_config_files(&suffix));
