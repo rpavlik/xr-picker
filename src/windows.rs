@@ -10,7 +10,10 @@ use crate::{
     runtime::BaseRuntime,
     Error, OPENXR_MAJOR_VERSION,
 };
-use std::{path::{Path, PathBuf}, collections::{HashMap, HashSet}};
+use std::{
+    collections::{hash_map::RandomState, HashMap, HashSet},
+    path::{Path, PathBuf},
+};
 
 #[derive(Debug, Clone)]
 pub struct WindowsRuntime {
@@ -57,10 +60,12 @@ fn make_prefix_key_native() -> PathBuf {
 
 #[cfg(target_arch = "x86_64")]
 fn make_prefix_key_narrow() -> Option<PathBuf> {
-    Some(Path::new("Software")
-        .join("WOW6432Node")
-        .join("Khronos")
-        .join(&OPENXR_MAJOR_VERSION.to_string()))
+    Some(
+        Path::new("Software")
+            .join("WOW6432Node")
+            .join("Khronos")
+            .join(&OPENXR_MAJOR_VERSION.to_string()),
+    )
 }
 #[cfg(not(target_arch = "x86_64"))]
 fn make_prefix_key_narrow() -> Option<PathBuf> {
@@ -88,7 +93,6 @@ impl PlatformRuntime for WindowsRuntime {
         todo!()
     }
 }
-
 
 pub struct WindowsPlatform;
 
@@ -130,52 +134,121 @@ fn enumerate_reg_runtimes(base_key: &Path) -> Result<Vec<PathBuf>, Error> {
 }
 
 fn make_winmr() -> (Option<PathBuf>, Option<PathBuf>) {
-    system_dir_native().map(|d| d.join(WINMR_JSON_NAME)), system_dir_narrow().map(|d| d.join(WINMR_JSON_NAME))
+    (
+        system_dir_native().map(|d| d.join(WINMR_JSON_NAME)),
+        system_dir_narrow().map(|d| d.join(WINMR_JSON_NAME)),
+    )
 }
 
+#[derive(Default)]
+struct RuntimeCollection {
+    runtimes: Vec<WindowsRuntime>,
+    used_manifests: HashSet<PathBuf>,
+}
+
+impl RuntimeCollection {
+    fn try_add(&mut self, path: Option<&Path>, path_narrow: Option<&Path>) -> Result<(), Error> {
+        let mut has_path = false;
+        if let Some(p) = path {
+            has_path = true;
+            if self.used_manifests.contains(p) {
+                return Ok(());
+            }
+        }
+        if let Some(p) = path_narrow {
+            has_path = true;
+            if self.used_manifests.contains(p) {
+                return Ok(());
+            }
+        }
+        if !has_path {
+            return Err(Error::EnumerationError(
+                "Tried to add a runtime with no manifest paths!".to_string(),
+            ));
+        }
+        let runtime = WindowsRuntime::new(path, path_narrow)?;
+        self.runtimes.push(runtime);
+        if let Some(p) = path {
+            self.used_manifests.insert(p.to_owned());
+        }
+        if let Some(p) = path_narrow {
+            self.used_manifests.insert(p.to_owned());
+        }
+        Ok(())
+    }
+}
+
+impl Into<Vec<WindowsRuntime>> for RuntimeCollection {
+    fn into(self) -> Vec<WindowsRuntime> {
+        self.runtimes
+    }
+}
 
 impl Platform for WindowsPlatform {
     type PlatformRuntimeType = WindowsRuntime;
     fn find_available_runtimes(&self) -> Result<Vec<Self::PlatformRuntimeType>, Error> {
+        let mut collection = RuntimeCollection::default();
+
+        // Manually add winmr because it will be some revisions of windows before they can put it in AvailableRuntimes
+        if let Err(_) = collection.try_add(
+            system_dir_native()
+                .map(|d| d.join(WINMR_JSON_NAME))
+                .as_ref()
+                .map(|d| d.as_path()),
+            system_dir_narrow()
+                .map(|d| d.join(WINMR_JSON_NAME))
+                .as_ref()
+                .map(|d| d.as_path()),
+        ) {
+            // this is fine if it's not there
+        }
 
         let native = enumerate_reg_runtimes(&make_prefix_key_native().join(AVAILABLE_RUNTIMES))?;
-        let narrow = make_prefix_key_narrow().map(|k| enumerate_reg_runtimes(&k)).transpose()?.unwrap_or_default();
-        
-        let narrow_by_parent_dir = HashMap::from_iter( narrow.iter().filter_map(|p| p.parent().map(|parent| (parent, p))));
+        let narrow = make_prefix_key_narrow()
+            .map(|k| enumerate_reg_runtimes(&k))
+            .transpose()?
+            .unwrap_or_default();
 
-        let mut used_narrow = HashSet::new();
+        let narrow_by_parent_dir: HashMap<&Path, &Path, RandomState> = HashMap::from_iter(
+            narrow
+                .iter()
+                .filter_map(|p| p.parent().map(|parent| (parent, p.as_path()))),
+        );
 
-        let mut result = vec![];
+        // Handle all native-width runtimes, matching with a narrow one if applicable
         for path in native.iter() {
             let parent = path.parent().expect("every file has a parent");
             let narrow_ver = narrow_by_parent_dir.get(parent);
-            result.append(WindowsRuntime::new(Some(path), narrow_ver)?);
-            if let Some(narrow_version) = narrow_by_parent_dir.get(parent) {
+            if let Err(e) = collection.try_add(Some(path), narrow_ver.map(|p| p.as_ref())) {
+                eprintln!(
+                    "Error creating runtime object for runtime with manifest {}: {}",
+                    path.display(),
+                    e
+                );
             }
         }
-        let winmr = system_dir_native().map(|d| d.join(WINMR_JSON_NAME))
 
-        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-        let avail = hklm
-            .open_subkey(make_available_runtimes_key())
-            .map_err(|e| Error::EnumerationError(format!("Registry read error: {}", e)))?;
+        // let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+        // let avail = hklm
+        //     .open_subkey(make_available_runtimes_key())
+        //     .map_err(|e| Error::EnumerationError(format!("Registry read error: {}", e)))?;
 
-        let manifest_files = avail
-            .enum_values()
-            .filter_map(|x| {
-                let x = x.ok()?;
-                maybe_runtime(&avail, x)
-            })
-            .filter_map(|p| match WindowsRuntime::new(&p) {
-                Ok(r) => Some(r),
-                Err(e) => {
-                    eprintln!("Error when trying to load {}: {}", p.display(), e);
-                    None
-                }
-            })
-            .collect();
+        // let manifest_files = avail
+        //     .enum_values()
+        //     .filter_map(|x| {
+        //         let x = x.ok()?;
+        //         maybe_runtime(&avail, x)
+        //     })
+        //     .filter_map(|p| match WindowsRuntime::new(&p) {
+        //         Ok(r) => Some(r),
+        //         Err(e) => {
+        //             eprintln!("Error when trying to load {}: {}", p.display(), e);
+        //             None
+        //         }
+        //     })
+        //     .collect();
 
-        Ok(manifest_files)
+        Ok(collection.into())
     }
 }
 
