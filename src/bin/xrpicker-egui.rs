@@ -25,11 +25,16 @@ impl<T: Platform> InnerState<T> {
     fn refresh(self, platform: &T) -> Result<Self, Error> {
         let new_runtimes = platform.find_available_runtimes()?;
         let active_data = platform.get_active_data();
+
+        // start with existing runtimes
         let runtimes = self
             .runtimes
             .into_iter()
+            // chain on the new ones
             .chain(new_runtimes.into_iter())
+            // only keep the unique ones, preferring the earlier ones
             .unique_by(|r| {
+                // compare by the list of manifests used
                 r.get_manifests()
                     .into_iter()
                     .map(|p| p.to_owned())
@@ -42,6 +47,7 @@ impl<T: Platform> InnerState<T> {
         })
     }
 }
+
 struct PickerApp<T: Platform> {
     platform: T,
     state: Option<Result<InnerState<T>, Error>>,
@@ -55,77 +61,88 @@ impl<T: Platform> PickerApp<T> {
     }
 }
 
-fn update_gui<T: Platform>(
+/// Immediate-mode GUI for when we're in an error condition
+fn show_error<T: Platform>(
     platform: &T,
-    result_or_state: Result<InnerState<T>, Error>,
+    err: Error,
     ctx: &egui::Context,
 ) -> Result<InnerState<T>, Error> {
-    match result_or_state {
-        Ok(state) => {
-            let mut repopulate = false;
-            let mut new_state = None;
-            egui::CentralPanel::default().show(ctx, |ui| {
-                ui.heading("OpenXR Runtime Picker");
-                egui::Grid::new("runtimes")
-                    .striped(true)
-                    .num_columns(4)
-                    .show(ui, |ui| {
-                        ui.label(""); // for button
-                        ui.label("Runtime Name");
-                        ui.label("State");
-                        ui.label("Details");
-                        ui.end_row();
+    let repopulate = egui::CentralPanel::default()
+        .show(ctx, |ui| {
+            ui.heading(format!("ERROR! {:?}", err));
+            if ui.button("Refresh").clicked() {
+                return true;
+            }
+            false
+        })
+        .inner;
 
-                        for runtime in &state.runtimes {
-                            let runtime_active_state =
-                                platform.get_runtime_active_state(runtime, &state.active_data);
-                            if runtime_active_state.provide_make_active_button() {
-                                if ui.button("Make active").clicked() {
-                                    if let Err(e) = runtime.make_active() {
-                                        eprintln!("error in make_active: {:?}", e);
-                                        new_state = Some(Err(e));
-                                    }
-                                    repopulate = true;
-                                }
-                            } else {
-                                ui.label("");
-                            }
-                            ui.label(runtime.get_runtime_name());
-                            ui.label(format!("{}", runtime_active_state));
-                            ui.label(runtime.describe());
-                            ui.end_row();
-                        }
-                    });
-            });
-            if let Some(new_state) = new_state {
-                return new_state;
-            }
-            if repopulate {
-                return state.refresh(platform);
-            }
-            Ok(state)
-        }
-        Err(e) => {
-            let mut repopulate = false;
-            egui::CentralPanel::default().show(ctx, |ui| {
-                ui.heading(format!("ERROR! {}", e));
-                if ui.button("Refresh").clicked() {
-                    repopulate = true;
-                }
-            });
-
-            if repopulate {
-                return InnerState::new(platform);
-            }
-            Err(e)
-        }
+    if repopulate {
+        return InnerState::new(platform);
     }
+    Err(err)
+}
+
+/// Immediate-mode GUI routine for normal operation
+fn show_state<T: Platform>(
+    platform: &T,
+    state: InnerState<T>,
+    ctx: &egui::Context,
+) -> Result<InnerState<T>, Error> {
+    let repopulate = egui::CentralPanel::default()
+        .show(ctx, |ui| {
+            ui.heading("OpenXR Runtime Picker");
+
+            // The closure this calls returns true if we should refresh the list
+            egui::Grid::new("runtimes")
+                .striped(true)
+                .num_columns(4)
+                .show(ui, |ui| {
+                    let mut repopulate = false;
+                    ui.label(""); // for button
+                    ui.label("Runtime Name");
+                    ui.label("State");
+                    ui.label("Details");
+                    ui.end_row();
+
+                    for runtime in &state.runtimes {
+                        let runtime_active_state =
+                            platform.get_runtime_active_state(runtime, &state.active_data);
+                        if runtime_active_state.provide_make_active_button() {
+                            if ui.button("Make active").clicked() {
+                                if let Err(e) = runtime.make_active() {
+                                    eprintln!("error in make_active: {:?}", e);
+                                    return Err(e);
+                                }
+                                repopulate = true;
+                            }
+                        } else {
+                            ui.label("");
+                        }
+                        ui.label(runtime.get_runtime_name());
+                        ui.label(format!("{}", runtime_active_state));
+                        ui.label(runtime.describe());
+                        ui.end_row();
+                    }
+                    Ok(repopulate)
+                })
+                .inner // get at the closure's inner return value
+        })
+        .inner?; // get at the nested closure's return value (whether to repopulate), after handling errors.
+    if repopulate {
+        return state.refresh(platform);
+    }
+    Ok(state)
 }
 
 impl<T: Platform> eframe::App for PickerApp<T> {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if let Some(state) = self.state.take() {
-            self.state.replace(update_gui(&self.platform, state, ctx));
+        if let Some(state_or_error) = self.state.take() {
+            let new_state = match state_or_error {
+                Ok(state) => show_state(&self.platform, state, ctx),
+                Err(e) => show_error(&self.platform, e, ctx),
+            };
+            self.state.replace(new_state);
         }
     }
 }
