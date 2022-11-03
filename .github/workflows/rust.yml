@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2022, Collabora, Ltd.
+# SPDX-FileCopyrightText: 2022, GitHub
+# SPDX-License-Identifier: CC0-1.0
+
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-linux:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+      
+  build-win:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
