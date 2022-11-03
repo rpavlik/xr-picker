@@ -86,27 +86,17 @@ fn check_active(active_runtime_manifest: Option<&Path>, runtime: Option<&BaseRun
     }
 }
 impl PlatformRuntime for WindowsRuntime {
-    fn get_active_state(&self) -> ActiveState {
-        let native_active = get_active_runtime_manifest_path(make_prefix_key_native());
-        let narrow_active = make_prefix_key_narrow()
-            .into_iter()
-            .filter_map(|p| get_active_runtime_manifest_path(p))
-            .next();
-
-        let is_native_active = check_active(
-            native_active.as_ref().map(|p| p.as_path()),
-            self.base.as_ref(),
-        );
-
-        let is_narrow_active = check_active(
-            narrow_active.as_ref().map(|p| p.as_path()),
-            self.base_narrow.as_ref(),
-        );
-        ActiveState::from_native_and_narrow_activity(is_native_active, is_narrow_active)
-    }
-
     fn make_active(&self) -> Result<(), Error> {
         todo!()
+    }
+
+    fn get_runtime_name(&self) -> String {
+        self.base
+            .iter()
+            .chain(self.base_narrow.iter())
+            .map(|r| r.get_runtime_name())
+            .next()
+            .expect("At least one of the runtimes will be Some")
     }
 }
 
@@ -154,6 +144,48 @@ impl Into<Vec<WindowsRuntime>> for RuntimeCollection {
     }
 }
 
+pub struct WindowsActiveRuntimeData {
+    native: Option<PathBuf>,
+    narrow: Option<PathBuf>,
+}
+
+impl WindowsActiveRuntimeData {
+    fn new() -> Self {
+        let native_active = get_active_runtime_manifest_path(make_prefix_key_native());
+        let narrow_active = make_prefix_key_narrow()
+            .into_iter()
+            .filter_map(|p| get_active_runtime_manifest_path(p))
+            .next();
+        Self {
+            native: native_active,
+            narrow: narrow_active,
+        }
+    }
+
+    fn matches(&self, runtime: &WindowsRuntime) -> ActiveState {
+        let is_native_active = check_active(
+            self.native.as_ref().map(|p| p.as_path()),
+            runtime.base.as_ref(),
+        );
+
+        let is_narrow_active = check_active(
+            self.narrow.as_ref().map(|p| p.as_path()),
+            runtime.base_narrow.as_ref(),
+        );
+        ActiveState::from_native_and_narrow_activity(is_native_active, is_narrow_active)
+    }
+}
+
+impl<'a> Into<Vec<&'a Path>> for &'a WindowsActiveRuntimeData {
+    fn into(self) -> Vec<&'a Path> {
+        self.native
+            .iter()
+            .chain(self.narrow.iter())
+            .map(|p| p.as_path())
+            .collect()
+    }
+}
+
 pub struct WindowsPlatform;
 
 impl WindowsPlatform {
@@ -183,6 +215,7 @@ fn enumerate_reg_runtimes(base_key: &Path) -> Result<Vec<PathBuf>, Error> {
     });
     Ok(manifest_files.collect())
 }
+
 impl Platform for WindowsPlatform {
     type PlatformRuntimeType = WindowsRuntime;
     fn find_available_runtimes(&self) -> Result<Vec<Self::PlatformRuntimeType>, Error> {
@@ -228,6 +261,29 @@ impl Platform for WindowsPlatform {
             }
         }
         Ok(collection.into())
+    }
+
+    type PlatformActiveData = WindowsActiveRuntimeData;
+
+    fn get_active_runtime_manifests(&self) -> Vec<PathBuf> {
+        let data = WindowsActiveRuntimeData::new();
+
+        data.native
+            .into_iter()
+            .chain(data.narrow.into_iter())
+            .collect()
+    }
+
+    fn get_active_data(&self) -> Self::PlatformActiveData {
+        WindowsActiveRuntimeData::new()
+    }
+
+    fn get_runtime_active_state(
+        &self,
+        runtime: &Self::PlatformRuntimeType,
+        active_data: &Self::PlatformActiveData,
+    ) -> ActiveState {
+        active_data.matches(runtime)
     }
 }
 
