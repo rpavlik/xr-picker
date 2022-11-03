@@ -96,6 +96,7 @@ fn show_state<T: Platform>(
             // The closure this calls returns true if we should refresh the list
             egui::Grid::new("runtimes")
                 .striped(true)
+                .min_col_width(ui.spacing().interact_size.x * 2.0) // widen to avoid resizing based on default runtime
                 .num_columns(4)
                 .show(ui, |ui| {
                     let mut repopulate = false;
