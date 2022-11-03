@@ -7,12 +7,12 @@ use crate::{
     ActiveState, Error, ACTIVE_RUNTIME_FILENAME, OPENXR, OPENXR_MAJOR_VERSION,
 };
 use std::{
-    ffi::OsStr,
     iter::once,
     path::{Path, PathBuf},
 };
 
 const ETC: &str = "/etc";
+
 fn make_path_suffix() -> PathBuf {
     Path::new(OPENXR).join(OPENXR_MAJOR_VERSION.to_string())
 }
@@ -25,10 +25,9 @@ fn find_active_runtime(suffix: &Path) -> Option<PathBuf> {
     let xdg_dirs = xdg::BaseDirectories::new().ok()?;
     let suffix = suffix.join(ACTIVE_RUNTIME_FILENAME);
     let xdg_iter = xdg_dirs.find_config_files(&suffix);
-    let sysconfdir_iter = once(make_sysconfdir(&suffix));
 
     xdg_iter
-        .chain(sysconfdir_iter)
+        .chain(once(make_sysconfdir(&suffix)))
         .filter(|p| {
             p.metadata()
                 .map(|m| m.is_file() || m.is_symlink())
@@ -56,17 +55,6 @@ impl LinuxRuntime {
 }
 
 impl PlatformRuntime for LinuxRuntime {
-    fn get_active_state(&self) -> ActiveState {
-        let is_active = find_active_runtime(&make_path_suffix())
-            .map(|active_path| self.base.get_manifest_path() == active_path)
-            .unwrap_or_default();
-
-        match is_active {
-            true => ActiveState::ActiveIndependentRuntime,
-            false => ActiveState::NotActive,
-        }
-    }
-
     fn make_active(&self) -> Result<(), Error> {
         todo!()
     }
@@ -114,8 +102,12 @@ fn find_potential_manifests_sysconfdir(suffix: &Path) -> impl Iterator<Item = Pa
         })
 }
 
+pub struct LinuxActiveRuntimeData(Option<PathBuf>);
+
 impl Platform for LinuxPlatform {
     type PlatformRuntimeType = LinuxRuntime;
+    type PlatformActiveData = LinuxActiveRuntimeData;
+
     fn find_available_runtimes(&self) -> Result<Vec<Self::PlatformRuntimeType>, Error> {
         let manifest_files = find_potential_manifests_xdg(&self.path_suffix)
             .chain(find_potential_manifests_sysconfdir(&self.path_suffix))
@@ -142,6 +134,27 @@ impl Platform for LinuxPlatform {
         find_active_runtime(&make_path_suffix())
             .into_iter()
             .collect()
+    }
+
+    fn get_active_data(&self) -> Self::PlatformActiveData {
+        LinuxActiveRuntimeData(find_active_runtime(&make_path_suffix()))
+    }
+
+    fn get_runtime_active_state(
+        &self,
+        runtime: &Self::PlatformRuntimeType,
+        active_data: &Self::PlatformActiveData,
+    ) -> ActiveState {
+        let is_active = active_data
+            .0
+            .as_ref()
+            .map(|active_path| runtime.base.get_manifest_path() == active_path)
+            .unwrap_or_default();
+
+        match is_active {
+            true => ActiveState::ActiveIndependentRuntime,
+            false => ActiveState::NotActive,
+        }
     }
 }
 

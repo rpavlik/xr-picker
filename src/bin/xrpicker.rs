@@ -6,11 +6,12 @@ use xrpicker::{make_platform, platform::PlatformRuntime, Platform};
 fn main() {
     println!("Hello, world!");
     let platform = make_platform();
+    let active_data = platform.get_active_data();
     for runtime in platform.find_available_runtimes().unwrap() {
         println!(
             "- {}: {:?} - {:?}",
             runtime.get_runtime_name(),
-            runtime.get_active_state(),
+            platform.get_runtime_active_state(&runtime, &active_data),
             runtime
         );
     }
