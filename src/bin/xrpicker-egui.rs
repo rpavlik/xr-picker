@@ -20,6 +20,8 @@ impl<T: Platform> InnerState<T> {
         })
     }
 
+    /// "refresh" existing state: we don't re-create if we can avoid it,
+    /// to preserve the order of existing entries.
     fn refresh(self, platform: &T) -> Result<Self, Error> {
         let new_runtimes = platform.find_available_runtimes()?;
         let active_data = platform.get_active_data();
@@ -53,11 +55,10 @@ impl<T: Platform> PickerApp<T> {
     }
 }
 
-fn update<T: Platform>(
+fn update_gui<T: Platform>(
     platform: &T,
     result_or_state: Result<InnerState<T>, Error>,
     ctx: &egui::Context,
-    frame: &mut eframe::Frame,
 ) -> Result<InnerState<T>, Error> {
     match result_or_state {
         Ok(state) => {
@@ -65,7 +66,6 @@ fn update<T: Platform>(
             let mut new_state = None;
             egui::CentralPanel::default().show(ctx, |ui| {
                 ui.heading("OpenXR Runtime Picker");
-
                 egui::Grid::new("runtimes")
                     .striped(true)
                     .num_columns(4)
@@ -123,10 +123,9 @@ fn update<T: Platform>(
 }
 
 impl<T: Platform> eframe::App for PickerApp<T> {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if let Some(state) = self.state.take() {
-            self.state
-                .replace(update(&self.platform, state, ctx, frame));
+            self.state.replace(update_gui(&self.platform, state, ctx));
         }
     }
 }
