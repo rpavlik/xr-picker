@@ -21,23 +21,6 @@ fn make_sysconfdir(suffix: &Path) -> PathBuf {
     Path::new(ETC).join(suffix)
 }
 
-fn find_active_runtime(suffix: &Path) -> Option<PathBuf> {
-    let xdg_dirs = xdg::BaseDirectories::new().ok()?;
-    let suffix = suffix.join(ACTIVE_RUNTIME_FILENAME);
-    let xdg_iter = xdg_dirs.find_config_files(&suffix);
-
-    xdg_iter
-        .chain(once(make_sysconfdir(&suffix)))
-        .filter(|p| {
-            p.metadata()
-                .map(|m| m.is_file() || m.is_symlink())
-                .ok()
-                .unwrap_or_default()
-        })
-        .filter_map(|p| p.canonicalize().ok())
-        .next()
-}
-
 #[derive(Debug)]
 pub struct LinuxRuntime {
     base: BaseRuntime,
@@ -104,6 +87,42 @@ fn find_potential_manifests_sysconfdir(suffix: &Path) -> impl Iterator<Item = Pa
 
 pub struct LinuxActiveRuntimeData(Option<PathBuf>);
 
+impl LinuxActiveRuntimeData {
+    fn new() -> Self {
+        let suffix = (&make_path_suffix()).join(ACTIVE_RUNTIME_FILENAME);
+        let xdg_iter = xdg::BaseDirectories::new()
+            .ok()
+            .into_iter()
+            .flat_map(|d| d.find_config_files(&suffix));
+
+        let path = xdg_iter
+            .chain(once(make_sysconfdir(&suffix)))
+            .filter(|p| {
+                p.metadata()
+                    .map(|m| m.is_file() || m.is_symlink())
+                    .ok()
+                    .unwrap_or_default()
+            })
+            .filter_map(|p| p.canonicalize().ok())
+            .next();
+
+        LinuxActiveRuntimeData(path)
+    }
+
+    fn check_runtime(&self, runtime: &LinuxRuntime) -> ActiveState {
+        let is_active = self
+            .0
+            .as_ref()
+            .map(|active_path| runtime.base.get_manifest_path() == active_path)
+            .unwrap_or_default();
+
+        match is_active {
+            true => ActiveState::ActiveIndependentRuntime,
+            false => ActiveState::NotActive,
+        }
+    }
+}
+
 impl Platform for LinuxPlatform {
     type PlatformRuntimeType = LinuxRuntime;
     type PlatformActiveData = LinuxActiveRuntimeData;
@@ -131,13 +150,11 @@ impl Platform for LinuxPlatform {
     }
 
     fn get_active_runtime_manifests(&self) -> Vec<PathBuf> {
-        find_active_runtime(&make_path_suffix())
-            .into_iter()
-            .collect()
+        LinuxActiveRuntimeData::new().0.into_iter().collect()
     }
 
     fn get_active_data(&self) -> Self::PlatformActiveData {
-        LinuxActiveRuntimeData(find_active_runtime(&make_path_suffix()))
+        LinuxActiveRuntimeData::new()
     }
 
     fn get_runtime_active_state(
@@ -145,16 +162,7 @@ impl Platform for LinuxPlatform {
         runtime: &Self::PlatformRuntimeType,
         active_data: &Self::PlatformActiveData,
     ) -> ActiveState {
-        let is_active = active_data
-            .0
-            .as_ref()
-            .map(|active_path| runtime.base.get_manifest_path() == active_path)
-            .unwrap_or_default();
-
-        match is_active {
-            true => ActiveState::ActiveIndependentRuntime,
-            false => ActiveState::NotActive,
-        }
+        active_data.check_runtime(runtime)
     }
 }
 
