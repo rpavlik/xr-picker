@@ -7,6 +7,7 @@ use crate::{
     ActiveState, Error, ACTIVE_RUNTIME_FILENAME, OPENXR, OPENXR_MAJOR_VERSION,
 };
 use std::{
+    ffi::OsStr,
     iter::once,
     path::{Path, PathBuf},
 };
@@ -22,10 +23,9 @@ fn make_sysconfdir(suffix: &Path) -> PathBuf {
 
 fn find_active_runtime(suffix: &Path) -> Option<PathBuf> {
     let xdg_dirs = xdg::BaseDirectories::new().ok()?;
-    let xdg_iter = xdg_dirs
-        .list_config_files_once(suffix.join(ACTIVE_RUNTIME_FILENAME))
-        .into_iter();
-    let sysconfdir_iter = once(make_sysconfdir(suffix).join(ACTIVE_RUNTIME_FILENAME));
+    let suffix = suffix.join(ACTIVE_RUNTIME_FILENAME);
+    let xdg_iter = xdg_dirs.find_config_files(&suffix);
+    let sysconfdir_iter = once(make_sysconfdir(&suffix));
 
     xdg_iter
         .chain(sysconfdir_iter)
