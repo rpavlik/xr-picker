@@ -17,14 +17,16 @@ pub trait PlatformRuntime {
     fn get_manifests(&self) -> Vec<&Path>;
     fn get_libraries(&self) -> Vec<PathBuf>;
 
+    /// Describe this specific instance of a runtime: usually using the manifest(s) and library
     fn describe(&self) -> String;
-
-    // fn uniqueness_key(&self) -> PathBuf;
 }
 
 pub trait Platform {
+    /// Platform-specific type for a runtime, must implement `PlatformType`
     type PlatformRuntimeType: PlatformRuntime;
-    /// Platform-specific data describing the currently active runtime(s)
+
+    /// Platform-specific data describing the currently active runtime(s).
+    /// Meant to be opaque and just used in `get_runtime_active_state()`
     type PlatformActiveData;
 
     /// Enumerate all available runtimes we might be aware of.

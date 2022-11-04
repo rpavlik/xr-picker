@@ -68,6 +68,7 @@ impl Display for ActiveState {
 }
 
 impl ActiveState {
+    /// Turn a pair of booleans (one for native, one for narrow) into an active state enum.
     #[cfg(windows)]
     pub(crate) fn from_native_and_narrow_activity(
         is_native_active: bool,
@@ -81,7 +82,8 @@ impl ActiveState {
         }
     }
 
-    pub fn provide_make_active_button(&self) -> bool {
+    /// Is this state at least somewhat inactive, such that we should offer to make it active?
+    pub fn should_provide_make_active_button(&self) -> bool {
         match self {
             ActiveState::NotActive => true,
             ActiveState::ActiveIndependentRuntime => false,

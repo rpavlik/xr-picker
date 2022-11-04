@@ -126,25 +126,22 @@ fn find_potential_manifests_xdg(suffix: &Path) -> impl Iterator<Item = PathBuf> 
     BaseDirectories::new()
         .ok()
         .into_iter()
-        .flat_map(move |xdg_dirs| xdg_dirs.list_config_files(&suffix).into_iter())
+        .flat_map(move |xdg_dirs| xdg_dirs.list_config_files(&suffix))
 }
 
 fn find_potential_manifests_sysconfdir(suffix: &Path) -> impl Iterator<Item = PathBuf> {
     make_sysconfdir(suffix)
         .read_dir()
         .into_iter()
-        .flat_map(|dir_contents| {
-            dir_contents
-                .into_iter()
-                .filter_map(|r| r.ok())
-                .filter_map(|entry| {
-                    if let Ok(m) = entry.metadata() {
-                        if m.is_file() || m.is_symlink() {
-                            return Some(entry.path());
-                        }
-                    }
-                    None
-                })
+        .flatten()
+        .filter_map(|r| r.ok())
+        .filter_map(|entry| {
+            if let Ok(m) = entry.metadata() {
+                if m.is_file() || m.is_symlink() {
+                    return Some(entry.path());
+                }
+            }
+            None
         })
 }
 
@@ -173,16 +170,12 @@ impl LinuxActiveRuntimeData {
     }
 
     fn check_runtime(&self, runtime: &LinuxRuntime) -> ActiveState {
-        let is_active = self
-            .0
-            .as_ref()
-            .map(|active_path| runtime.base.get_manifest_path() == active_path)
-            .unwrap_or_default();
-
-        match is_active {
-            true => ActiveState::ActiveIndependentRuntime,
-            false => ActiveState::NotActive,
+        if let Some(active_path) = &self.0 {
+            if active_path == runtime.base.get_manifest_path() {
+                return ActiveState::ActiveIndependentRuntime;
+            }
         }
+        ActiveState::NotActive
     }
 }
 
@@ -208,8 +201,6 @@ impl Platform for LinuxPlatform {
                     }
                 },
             )
-            // .unique_by(|r| r.base.get_manifest_path().to_owned())
-            // .sorted_by_cached_key(|r| r.base.resolve_library_path())
             .collect();
         Ok(manifest_files)
     }
@@ -231,6 +222,7 @@ impl Platform for LinuxPlatform {
     }
 }
 
+/// Call to create a platform-specific object implementing the `Platform` trait.
 pub fn make_platform() -> LinuxPlatform {
     LinuxPlatform::new()
 }
