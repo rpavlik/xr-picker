@@ -3,7 +3,7 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::{ActiveState, Error};
+use crate::{ActiveState, Error, ManifestError};
 
 pub trait PlatformRuntime {
     /// Attempt to make this runtime active.
@@ -30,7 +30,9 @@ pub trait Platform {
     type PlatformActiveData;
 
     /// Enumerate all available runtimes we might be aware of.
-    fn find_available_runtimes(&self) -> Result<Vec<Self::PlatformRuntimeType>, Error>;
+    fn find_available_runtimes(
+        &self,
+    ) -> Result<(Vec<Self::PlatformRuntimeType>, Vec<ManifestError>), Error>;
 
     fn get_active_runtime_manifests(&self) -> Vec<PathBuf>;
 

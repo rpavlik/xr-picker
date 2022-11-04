@@ -5,7 +5,7 @@ use crate::{
     manifest::GenericManifest,
     platform::{Platform, PlatformRuntime},
     runtime::BaseRuntime,
-    ActiveState, Error, OPENXR, OPENXR_MAJOR_VERSION,
+    ActiveState, Error, ManifestError, OPENXR, OPENXR_MAJOR_VERSION,
 };
 use itertools::Itertools;
 use special_folder::SpecialFolder;
@@ -90,6 +90,7 @@ fn make_prefix_key_flags_64() -> Option<u32> {
         None
     }
 }
+
 #[cfg(target_pointer_width = "32")]
 fn make_prefix_key_flags_32() -> Option<u32> {
     use winreg::enums::KEY_WOW64_32KEY;
@@ -198,6 +199,46 @@ impl RuntimeCollection {
         }
         Ok(())
     }
+
+    fn try_add_varjo(&mut self) -> Result<(), ManifestError> {
+        if !cfg!(target_pointer_width = "64") {
+            return Ok(());
+        }
+        let path = SpecialFolder::ProgramFiles.get().map(|p| {
+            p.join("Varjo")
+                .join("varjo-openxr")
+                .join("VarjoOpenXR.json")
+        });
+        let path = path.as_deref().filter(|&p| p.exists());
+        if let Some(path) = path {
+            self.try_add(Some(path), None)
+                .map_err(|e| ManifestError(path.to_owned(), e))
+        } else {
+            Ok(())
+        }
+    }
+
+    fn try_add_winmr(&mut self) -> Result<(), ManifestError> {
+        // Manually add winmr because it will be some revisions of windows before they can put it in AvailableRuntimes
+        let (winmr64, winmr32) = (
+            system_dir_64().map(|d| d.join(WINMR_JSON_NAME)),
+            system_dir_32().map(|d| d.join(WINMR_JSON_NAME)),
+        );
+
+        // Only use paths that exist
+        let (winmr64, winmr32) = (
+            winmr64.as_deref().filter(|&p| p.exists()),
+            winmr32.as_deref().filter(|&p| p.exists()),
+        );
+
+        if winmr64.is_some() || winmr32.is_some() {
+            self.try_add(winmr64, winmr32).map_err(|e| {
+                ManifestError(winmr64.unwrap_or_else(|| winmr32.unwrap()).to_owned(), e)
+            })
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl From<RuntimeCollection> for Vec<WindowsRuntime> {
@@ -270,39 +311,27 @@ fn enumerate_reg_runtimes(base_key: &Path, reg_flags: u32) -> Result<Vec<PathBuf
     Ok(manifest_files.collect())
 }
 
+/// Returns any non-fatal errors
+fn manually_add_runtimes(collection: &mut RuntimeCollection) -> Vec<ManifestError> {
+    let mut nonfatal_errors = vec![];
+
+    if let Err(e) = collection.try_add_varjo() {
+        nonfatal_errors.push(e);
+    }
+    if let Err(e) = collection.try_add_winmr() {
+        nonfatal_errors.push(e);
+    }
+    nonfatal_errors
+}
+
 impl Platform for WindowsPlatform {
     type PlatformRuntimeType = WindowsRuntime;
-    fn find_available_runtimes(&self) -> Result<Vec<Self::PlatformRuntimeType>, Error> {
+    fn find_available_runtimes(
+        &self,
+    ) -> Result<(Vec<Self::PlatformRuntimeType>, Vec<ManifestError>), Error> {
         let mut collection = RuntimeCollection::default();
 
-        // Manually add winmr because it will be some revisions of windows before they can put it in AvailableRuntimes
-        if collection
-            .try_add(
-                system_dir_64().map(|d| d.join(WINMR_JSON_NAME)).as_deref(),
-                system_dir_32().map(|d| d.join(WINMR_JSON_NAME)).as_deref(),
-            )
-            .is_err()
-        {
-            // this is fine if it's not there
-        }
-
-        // Manually add varjo
-        if cfg!(target_pointer_width = "64") {
-            if let Some(program_files) = SpecialFolder::ProgramFiles.get() {
-                collection
-                    .try_add(
-                        Some(
-                            program_files
-                                .join("Varjo")
-                                .join("varjo-openxr")
-                                .join("VarjoOpenXR.json")
-                                .as_path(),
-                        ),
-                        None,
-                    )
-                    .ok();
-            }
-        }
+        let mut nonfatal_errors = vec![];
 
         let avail_runtimes_key_path = make_prefix_key().join(AVAILABLE_RUNTIMES);
 
@@ -332,14 +361,26 @@ impl Platform for WindowsPlatform {
                     path.display(),
                     e
                 );
+                nonfatal_errors.push(ManifestError(path.to_owned(), e));
             }
         }
         // Handle remaining 32-bit ones
         for path in manifests32.iter() {
             // we don't care about errors right now
-            collection.try_add(None, Some(path)).ok();
+            if let Err(e) = collection.try_add(None, Some(path)) {
+                eprintln!(
+                    "Error creating runtime object for runtime with manifest {}: {}",
+                    path.display(),
+                    e
+                );
+                nonfatal_errors.push(ManifestError(path.to_owned(), e));
+            }
         }
-        Ok(collection.into())
+
+        // Finally, try adding ones we might not see otherwise
+        nonfatal_errors.extend(manually_add_runtimes(&mut collection));
+
+        Ok((collection.into(), nonfatal_errors))
     }
 
     type PlatformActiveData = WindowsActiveRuntimeData;
