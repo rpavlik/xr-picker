@@ -3,19 +3,21 @@
 
 use eframe::egui;
 use itertools::Itertools;
-use xrpicker::{make_platform, platform::PlatformRuntime, Error, Platform};
+use xrpicker::{make_platform, platform::PlatformRuntime, Error, ManifestError, Platform};
 
 struct InnerState<T: Platform> {
     runtimes: Vec<T::PlatformRuntimeType>,
+    nonfatal_errors: Vec<ManifestError>,
     active_data: T::PlatformActiveData,
 }
 
 impl<T: Platform> InnerState<T> {
     fn new(platform: &T) -> Result<Self, Error> {
-        let runtimes = platform.find_available_runtimes()?;
+        let (runtimes, nonfatal_errors) = platform.find_available_runtimes()?;
         let active_data = platform.get_active_data();
         Ok(Self {
             runtimes,
+            nonfatal_errors,
             active_data,
         })
     }
@@ -23,7 +25,7 @@ impl<T: Platform> InnerState<T> {
     /// "refresh" existing state: we don't re-create if we can avoid it,
     /// to preserve the order of existing entries.
     fn refresh(self, platform: &T) -> Result<Self, Error> {
-        let new_runtimes = platform.find_available_runtimes()?;
+        let (new_runtimes, new_nonfatal_errors) = platform.find_available_runtimes()?;
         let active_data = platform.get_active_data();
 
         // start with existing runtimes
@@ -43,6 +45,7 @@ impl<T: Platform> InnerState<T> {
             .collect();
         Ok(Self {
             runtimes,
+            nonfatal_errors: new_nonfatal_errors,
             active_data,
         })
     }

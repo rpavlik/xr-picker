@@ -11,7 +11,7 @@ pub(crate) mod manifest;
 pub mod platform;
 pub(crate) mod runtime;
 
-use std::{fmt::Display, io};
+use std::{fmt::Display, io, path::PathBuf};
 
 pub(crate) use manifest::RuntimeManifest;
 
@@ -32,6 +32,9 @@ pub enum Error {
     #[error("Error when trying to set active runtime: {0}")]
     SetActiveError(String),
 }
+
+#[derive(Debug)]
+pub struct ManifestError(pub PathBuf, pub Error);
 
 #[derive(Debug, Clone, Copy)]
 pub enum ActiveState {
