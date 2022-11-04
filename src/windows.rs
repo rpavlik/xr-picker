@@ -286,6 +286,24 @@ impl Platform for WindowsPlatform {
             // this is fine if it's not there
         }
 
+        // Manually add varjo
+        if cfg!(target_pointer_width = "64") {
+            if let Some(program_files) = SpecialFolder::ProgramFiles.get() {
+                collection
+                    .try_add(
+                        Some(
+                            program_files
+                                .join("Varjo")
+                                .join("varjo-openxr")
+                                .join("VarjoOpenXR.json")
+                                .as_path(),
+                        ),
+                        None,
+                    )
+                    .ok();
+            }
+        }
+
         let avail_runtimes_key_path = make_prefix_key().join(AVAILABLE_RUNTIMES);
 
         let manifests64 = match make_prefix_key_flags_64() {

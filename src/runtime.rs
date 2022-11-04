@@ -55,6 +55,9 @@ impl BaseRuntime {
         if self.manifest.library_path().contains("monado") {
             return "Monado".to_owned();
         }
+        if self.manifest.library_path().contains("VarjoOpenXR") {
+            return "Varjo".to_owned();
+        }
 
         // Fallback to manifest path or library path
         self.manifest_path
