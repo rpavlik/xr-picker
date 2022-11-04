@@ -109,7 +109,7 @@ fn show_state<T: Platform>(
                     for runtime in &state.runtimes {
                         let runtime_active_state =
                             platform.get_runtime_active_state(runtime, &state.active_data);
-                        if runtime_active_state.provide_make_active_button() {
+                        if runtime_active_state.should_provide_make_active_button() {
                             if ui.button("Make active").clicked() {
                                 if let Err(e) = runtime.make_active() {
                                     eprintln!("error in make_active: {:?}", e);

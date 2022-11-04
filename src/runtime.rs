@@ -8,13 +8,20 @@ use std::{
 
 use crate::{manifest::GenericManifest, Error, RuntimeManifest};
 
+/// The path and parsed data of a runtime manifest.
+///
+/// Used inside platform-specific types that implement `PlatformRuntime`.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BaseRuntime {
+pub(crate) struct BaseRuntime {
     manifest_path: PathBuf,
     manifest: RuntimeManifest,
 }
 
 impl BaseRuntime {
+    /// Create from a manifest path.
+    ///
+    /// Does not check whether the library is valid, just whether we can load and parse the JSON
+    /// according to our schema.
     pub(crate) fn new(manifest_path: &Path) -> Result<Self, Error> {
         let contents = fs::read_to_string(manifest_path)?;
         let manifest: RuntimeManifest = serde_json::from_str(&contents)?;
@@ -27,6 +34,7 @@ impl BaseRuntime {
         })
     }
 
+    /// Get the path to our manifest
     pub(crate) fn get_manifest_path(&self) -> &Path {
         &self.manifest_path
     }
@@ -47,6 +55,9 @@ impl BaseRuntime {
         if self.manifest.library_path().contains("monado") {
             return "Monado".to_owned();
         }
+        if self.manifest.library_path().contains("VarjoOpenXR") {
+            return "Varjo".to_owned();
+        }
 
         // Fallback to manifest path or library path
         self.manifest_path
@@ -55,6 +66,7 @@ impl BaseRuntime {
             .to_owned()
     }
 
+    /// Get the fully resolved, canonical path to the library in this manifest/runtime, if possible
     pub(crate) fn resolve_library_path(&self) -> PathBuf {
         let notcanon = self
             .manifest_path
