@@ -90,6 +90,7 @@ fn make_prefix_key_flags_64() -> Option<u32> {
         None
     }
 }
+
 #[cfg(target_pointer_width = "32")]
 fn make_prefix_key_flags_32() -> Option<u32> {
     use winreg::enums::KEY_WOW64_32KEY;
@@ -330,7 +331,7 @@ impl Platform for WindowsPlatform {
     ) -> Result<(Vec<Self::PlatformRuntimeType>, Vec<ManifestError>), Error> {
         let mut collection = RuntimeCollection::default();
 
-        let mut nonfatal_errors = manually_add_runtimes(&mut collection);
+        let mut nonfatal_errors = vec![];
 
         let avail_runtimes_key_path = make_prefix_key().join(AVAILABLE_RUNTIMES);
 
@@ -375,6 +376,10 @@ impl Platform for WindowsPlatform {
                 nonfatal_errors.push(ManifestError(path.to_owned(), e));
             }
         }
+
+        // Finally, try adding ones we might not see otherwise
+        nonfatal_errors.extend(manually_add_runtimes(&mut collection));
+
         Ok((collection.into(), nonfatal_errors))
     }
 
