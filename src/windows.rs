@@ -14,94 +14,128 @@ use std::{
     path::{Path, PathBuf},
 };
 use winreg::{
-    enums::{HKEY_LOCAL_MACHINE, KEY_WRITE},
+    enums::{HKEY_LOCAL_MACHINE, KEY_QUERY_VALUE, KEY_READ, KEY_WRITE},
     RegKey, RegValue,
 };
 
 #[derive(Debug, Clone)]
 pub struct WindowsRuntime {
-    base: Option<BaseRuntime>,
-    base_narrow: Option<BaseRuntime>,
+    base64: Option<BaseRuntime>,
+    base32: Option<BaseRuntime>,
 }
 
 const WINMR_JSON_NAME: &str = "MixedRealityRuntime.json";
 
 const AVAILABLE_RUNTIMES: &str = "AvailableRuntimes";
 const ACTIVE_RUNTIME: &str = "ActiveRuntime";
-fn system_dir_native() -> Option<PathBuf> {
+
+#[cfg(target_pointer_width = "64")]
+fn system_dir_64() -> Option<PathBuf> {
     SpecialFolder::System.get()
 }
 
+#[cfg(target_pointer_width = "32")]
+fn system_dir_64() -> Option<PathBuf> {
+    use iswow64::iswow64;
+
+    if iswow64() {
+        SpecialFolder::System.get().map(|p| {
+            p.parent()
+                .expect("system dir has a parent")
+                .join("sysnative")
+        })
+    } else {
+        None
+    }
+}
+
 #[cfg(target_pointer_width = "64")]
-fn system_dir_narrow() -> Option<PathBuf> {
+fn system_dir_32() -> Option<PathBuf> {
     SpecialFolder::SystemX86.get()
 }
 
 #[cfg(target_pointer_width = "32")]
-fn system_dir_narrow() -> Option<PathBuf> {
-    None
+fn system_dir_32() -> Option<PathBuf> {
+    SpecialFolder::System.get()
 }
 
-fn make_prefix_key_native() -> PathBuf {
+fn make_prefix_key() -> PathBuf {
     Path::new("Software")
         .join("Khronos")
         .join(OPENXR)
         .join(&OPENXR_MAJOR_VERSION.to_string())
 }
 
-#[cfg(target_arch = "x86_64")]
-fn make_prefix_key_narrow() -> Option<PathBuf> {
-    Some(
-        Path::new("Software")
-            .join("WOW6432Node")
-            .join("Khronos")
-            .join(OPENXR)
-            .join(&OPENXR_MAJOR_VERSION.to_string()),
-    )
+#[cfg(target_pointer_width = "64")]
+fn make_prefix_key_flags_64() -> Option<u32> {
+    use winreg::enums::KEY_WOW64_64KEY;
+
+    Some(KEY_WOW64_64KEY)
 }
 
-#[cfg(not(target_arch = "x86_64"))]
-fn make_prefix_key_narrow() -> Option<PathBuf> {
-    None
+#[cfg(target_pointer_width = "64")]
+fn make_prefix_key_flags_32() -> Option<u32> {
+    use winreg::enums::KEY_WOW64_32KEY;
+
+    Some(KEY_WOW64_32KEY)
 }
 
-fn get_active_runtime_manifest_path(prefix: PathBuf) -> Option<PathBuf> {
+#[cfg(target_pointer_width = "32")]
+fn make_prefix_key_flags_64() -> Option<u32> {
+    use iswow64::iswow64;
+    use winreg::enums::KEY_WOW64_64KEY;
+    if iswow64() {
+        Some(KEY_WOW64_64KEY)
+    } else {
+        None
+    }
+}
+#[cfg(target_pointer_width = "32")]
+fn make_prefix_key_flags_32() -> Option<u32> {
+    use winreg::enums::KEY_WOW64_32KEY;
+    Some(KEY_WOW64_32KEY)
+}
+
+fn get_active_runtime_manifest_path(prefix: &Path, reg_flags: Option<u32>) -> Option<PathBuf> {
+    let reg_flags = reg_flags?;
     let base = RegKey::predef(HKEY_LOCAL_MACHINE)
-        .open_subkey(&prefix)
+        .open_subkey_with_flags(prefix, reg_flags | KEY_READ | KEY_QUERY_VALUE)
         .ok()?;
     let val: String = base.get_value(ACTIVE_RUNTIME).ok()?;
     Some(Path::new(&val).to_path_buf())
 }
 
 impl WindowsRuntime {
-    fn new(path: Option<&Path>, narrow_path: Option<&Path>) -> Result<Self, Error> {
-        let base = path.map(BaseRuntime::new).transpose()?;
-        let base_narrow = narrow_path.map(BaseRuntime::new).transpose()?;
-        Ok(WindowsRuntime { base, base_narrow })
+    fn new(path64: Option<&Path>, path32: Option<&Path>) -> Result<Self, Error> {
+        let base64 = path64.map(BaseRuntime::new).transpose()?;
+        let base32 = path32.map(BaseRuntime::new).transpose()?;
+        Ok(WindowsRuntime { base64, base32 })
     }
 
     fn runtimes(&self) -> impl Iterator<Item = &BaseRuntime> {
-        self.base.iter().chain(self.base_narrow.iter())
+        self.base64.iter().chain(self.base32.iter())
     }
 }
 
 impl PlatformRuntime for WindowsRuntime {
     fn make_active(&self) -> Result<(), Error> {
         fn try_set_active(
-            path: Option<PathBuf>,
+            reg_path: &Path,
             runtime: &Option<BaseRuntime>,
+            flags: Option<u32>,
         ) -> Result<(), Error> {
-            if let Some(path) = path {
-                if let Some(runtime) = runtime {
-                    let base = RegKey::predef(HKEY_LOCAL_MACHINE)
-                        .open_subkey_with_flags(&path, KEY_WRITE)?;
-                    base.set_value(ACTIVE_RUNTIME, &runtime.get_manifest_path().as_os_str())?;
-                }
+            if let (Some(runtime), Some(flags)) = (runtime, flags) {
+                let key = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey_with_flags(
+                    reg_path,
+                    flags | KEY_WRITE | KEY_READ | KEY_QUERY_VALUE,
+                )?;
+                key.set_value(ACTIVE_RUNTIME, &runtime.get_manifest_path().as_os_str())?;
             }
             Ok(())
         }
-        try_set_active(Some(make_prefix_key_native()), &self.base)?;
-        try_set_active(make_prefix_key_narrow(), &self.base_narrow)?;
+        let key = make_prefix_key();
+        try_set_active(&key, &self.base64, make_prefix_key_flags_64())?;
+        try_set_active(&key, &self.base32, make_prefix_key_flags_32())?;
         Ok(())
     }
 
@@ -135,15 +169,15 @@ struct RuntimeCollection {
 }
 
 impl RuntimeCollection {
-    fn try_add(&mut self, path: Option<&Path>, path_narrow: Option<&Path>) -> Result<(), Error> {
+    fn try_add(&mut self, path64: Option<&Path>, path32: Option<&Path>) -> Result<(), Error> {
         let mut has_path = false;
-        if let Some(p) = path {
+        if let Some(p) = path64 {
             has_path = true;
             if self.used_manifests.contains(p) {
                 return Ok(());
             }
         }
-        if let Some(p) = path_narrow {
+        if let Some(p) = path32 {
             has_path = true;
             if self.used_manifests.contains(p) {
                 return Ok(());
@@ -154,12 +188,12 @@ impl RuntimeCollection {
                 "Tried to add a runtime with no manifest paths!".to_string(),
             ));
         }
-        let runtime = WindowsRuntime::new(path, path_narrow)?;
+        let runtime = WindowsRuntime::new(path64, path32)?;
         self.runtimes.push(runtime);
-        if let Some(p) = path {
+        if let Some(p) = path64 {
             self.used_manifests.insert(p.to_owned());
         }
-        if let Some(p) = path_narrow {
+        if let Some(p) = path32 {
             self.used_manifests.insert(p.to_owned());
         }
         Ok(())
@@ -173,8 +207,8 @@ impl From<RuntimeCollection> for Vec<WindowsRuntime> {
 }
 
 pub struct WindowsActiveRuntimeData {
-    native: Option<PathBuf>,
-    narrow: Option<PathBuf>,
+    active_64: Option<PathBuf>,
+    active_32: Option<PathBuf>,
 }
 
 fn check_active(active_runtime_manifest: &Option<PathBuf>, runtime: &Option<BaseRuntime>) -> bool {
@@ -186,22 +220,20 @@ fn check_active(active_runtime_manifest: &Option<PathBuf>, runtime: &Option<Base
 
 impl WindowsActiveRuntimeData {
     fn new() -> Self {
-        let native_active = get_active_runtime_manifest_path(make_prefix_key_native());
-        let narrow_active = make_prefix_key_narrow()
-            .into_iter()
-            .filter_map(get_active_runtime_manifest_path)
-            .next();
+        let reg_prefix = make_prefix_key();
+        let active_64 = get_active_runtime_manifest_path(&reg_prefix, make_prefix_key_flags_64());
+        let active_32 = get_active_runtime_manifest_path(&reg_prefix, make_prefix_key_flags_32());
         Self {
-            native: native_active,
-            narrow: narrow_active,
+            active_64,
+            active_32,
         }
     }
 
     fn check_runtime(&self, runtime: &WindowsRuntime) -> ActiveState {
-        let is_native_active = check_active(&self.native, &runtime.base);
-        let is_narrow_active = check_active(&self.narrow, &runtime.base_narrow);
+        let active_64 = check_active(&self.active_64, &runtime.base64);
+        let active_32 = check_active(&self.active_32, &runtime.base32);
 
-        ActiveState::from_native_and_narrow_activity(is_native_active, is_narrow_active)
+        ActiveState::from_active_64_and_32(active_64, active_32)
     }
 }
 
@@ -222,10 +254,13 @@ fn maybe_runtime(regkey: &RegKey, kv: (String, RegValue)) -> Option<PathBuf> {
     None
 }
 
-fn enumerate_reg_runtimes(base_key: &Path) -> Result<Vec<PathBuf>, Error> {
+fn enumerate_reg_runtimes(base_key: &Path, reg_flags: u32) -> Result<Vec<PathBuf>, Error> {
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
     let avail = hklm
-        .open_subkey(base_key.to_str().unwrap())
+        .open_subkey_with_flags(
+            base_key.to_str().unwrap(),
+            reg_flags | KEY_READ | KEY_QUERY_VALUE,
+        )
         .map_err(|e| Error::EnumerationError(format!("Registry read error: {}", e)))?;
 
     let manifest_files = avail.enum_values().filter_map(|x| {
@@ -243,35 +278,37 @@ impl Platform for WindowsPlatform {
         // Manually add winmr because it will be some revisions of windows before they can put it in AvailableRuntimes
         if collection
             .try_add(
-                system_dir_native()
-                    .map(|d| d.join(WINMR_JSON_NAME))
-                    .as_deref(),
-                system_dir_narrow()
-                    .map(|d| d.join(WINMR_JSON_NAME))
-                    .as_deref(),
+                system_dir_64().map(|d| d.join(WINMR_JSON_NAME)).as_deref(),
+                system_dir_32().map(|d| d.join(WINMR_JSON_NAME)).as_deref(),
             )
             .is_err()
         {
             // this is fine if it's not there
         }
 
-        let native = enumerate_reg_runtimes(&make_prefix_key_native().join(AVAILABLE_RUNTIMES))?;
-        let narrow = make_prefix_key_narrow()
-            .map(|k| enumerate_reg_runtimes(&k))
-            .transpose()?
-            .unwrap_or_default();
+        let avail_runtimes_key_path = make_prefix_key().join(AVAILABLE_RUNTIMES);
 
-        let narrow_by_parent_dir: HashMap<&Path, &Path, RandomState> = HashMap::from_iter(
-            narrow
+        let manifests64 = match make_prefix_key_flags_64() {
+            Some(flags) => enumerate_reg_runtimes(&avail_runtimes_key_path, flags),
+            None => Ok(Default::default()),
+        }?;
+
+        let manifests32 = match make_prefix_key_flags_32() {
+            Some(flags) => enumerate_reg_runtimes(&avail_runtimes_key_path, flags),
+            None => Ok(Default::default()),
+        }?;
+
+        let manifest_32_by_parent_dir: HashMap<&Path, &Path, RandomState> = HashMap::from_iter(
+            manifests32
                 .iter()
                 .filter_map(|p| p.parent().map(|parent| (parent, p.as_path()))),
         );
 
-        // Handle all native-width runtimes, matching with a narrow one if applicable
-        for path in native.iter() {
+        // Handle all 64-bit runtimes, matching with a 32-bit one if applicable
+        for path in manifests64.iter() {
             let parent = path.parent().expect("every file has a parent");
-            let narrow_ver = narrow_by_parent_dir.get(parent);
-            if let Err(e) = collection.try_add(Some(path), narrow_ver.map(|p| p.as_ref())) {
+            let counterpart_32 = manifest_32_by_parent_dir.get(parent);
+            if let Err(e) = collection.try_add(Some(path), counterpart_32.map(|p| p.as_ref())) {
                 eprintln!(
                     "Error creating runtime object for runtime with manifest {}: {}",
                     path.display(),
@@ -279,11 +316,10 @@ impl Platform for WindowsPlatform {
                 );
             }
         }
-        // Handle remaining narrow ones
-        for path in narrow.iter() {
-            if let Err(_) = collection.try_add(None, Some(path)) {
-                // ok if it's already in there
-            }
+        // Handle remaining 32-bit ones
+        for path in manifests32.iter() {
+            // we don't care about errors right now
+            collection.try_add(None, Some(path)).ok();
         }
         Ok(collection.into())
     }
@@ -293,9 +329,9 @@ impl Platform for WindowsPlatform {
     fn get_active_runtime_manifests(&self) -> Vec<PathBuf> {
         let data = WindowsActiveRuntimeData::new();
         // OK to move out of data because we just created it for this purpose
-        data.native
+        data.active_64
             .into_iter()
-            .chain(data.narrow.into_iter())
+            .chain(data.active_32.into_iter())
             .collect()
     }
 

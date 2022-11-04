@@ -37,47 +37,31 @@ pub enum Error {
 pub enum ActiveState {
     NotActive,
     ActiveIndependentRuntime,
-    ActiveNativeRuntime,
-    ActiveNarrowRuntime,
-    ActiveNativeAndNarrowRuntime,
+    Active64,
+    Active32,
+    Active64and32,
 }
 
-#[cfg(target_pointer_width = "64")]
 impl Display for ActiveState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ActiveState::NotActive => write!(f, ""),
             ActiveState::ActiveIndependentRuntime => write!(f, "Active"),
-            ActiveState::ActiveNativeRuntime => write!(f, "Active - 64-bit only"),
-            ActiveState::ActiveNarrowRuntime => write!(f, "Active - 32-bit only"),
-            ActiveState::ActiveNativeAndNarrowRuntime => write!(f, "Active"),
-        }
-    }
-}
-#[cfg(target_pointer_width = "32")]
-impl Display for ActiveState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ActiveState::NotActive => write!(f, ""),
-            ActiveState::ActiveIndependentRuntime => write!(f, "Active"),
-            ActiveState::ActiveNativeRuntime => write!(f, "Active"),
-            ActiveState::ActiveNarrowRuntime => panic!("Should be unreachable"),
-            ActiveState::ActiveNativeAndNarrowRuntime => panic!("Should be unreachable"),
+            ActiveState::Active64 => write!(f, "Active - 64-bit only"),
+            ActiveState::Active32 => write!(f, "Active - 32-bit only"),
+            ActiveState::Active64and32 => write!(f, "Active"),
         }
     }
 }
 
 impl ActiveState {
-    /// Turn a pair of booleans (one for native, one for narrow) into an active state enum.
+    /// Turn a pair of booleans (one for 64 bit, one for 32) into an active state enum.
     #[cfg(windows)]
-    pub(crate) fn from_native_and_narrow_activity(
-        is_native_active: bool,
-        is_narrow_active: bool,
-    ) -> Self {
-        match (is_native_active, is_narrow_active) {
-            (true, true) => Self::ActiveNativeAndNarrowRuntime,
-            (true, false) => Self::ActiveNativeRuntime,
-            (false, true) => Self::ActiveNarrowRuntime,
+    pub(crate) fn from_active_64_and_32(active_64: bool, active_32: bool) -> Self {
+        match (active_64, active_32) {
+            (true, true) => Self::Active64and32,
+            (true, false) => Self::Active64,
+            (false, true) => Self::Active32,
             (false, false) => Self::NotActive,
         }
     }
@@ -87,9 +71,9 @@ impl ActiveState {
         match self {
             ActiveState::NotActive => true,
             ActiveState::ActiveIndependentRuntime => false,
-            ActiveState::ActiveNativeRuntime => true,
-            ActiveState::ActiveNarrowRuntime => true,
-            ActiveState::ActiveNativeAndNarrowRuntime => false,
+            ActiveState::Active64 => true,
+            ActiveState::Active32 => true,
+            ActiveState::Active64and32 => false,
         }
     }
 }
