@@ -1,18 +1,19 @@
 // Copyright 2022, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use eframe::epaint::ahash::HashSet;
 use xdg::{BaseDirectories, BaseDirectoriesError};
 
 use crate::{
     manifest::GenericManifest,
     platform::{Platform, PlatformRuntime},
     runtime::BaseRuntime,
-    ActiveState, Error, ACTIVE_RUNTIME_FILENAME, OPENXR, OPENXR_MAJOR_VERSION,
+    ActiveState, Error, ManifestError, ACTIVE_RUNTIME_FILENAME, OPENXR, OPENXR_MAJOR_VERSION,
 };
 use std::{
     fs,
     iter::once,
-    os::unix,
+    os::unix::{self, prelude::OsStrExt},
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -121,12 +122,17 @@ impl LinuxPlatform {
     }
 }
 
+fn is_active_runtime_name(p: &Path) -> bool {
+    p.file_name().map(|s| s.as_bytes()) == Some(ACTIVE_RUNTIME_FILENAME.as_bytes())
+}
+
 fn find_potential_manifests_xdg(suffix: &Path) -> impl Iterator<Item = PathBuf> {
     let suffix = suffix.to_owned();
     BaseDirectories::new()
         .ok()
         .into_iter()
         .flat_map(move |xdg_dirs| xdg_dirs.list_config_files(&suffix))
+        .filter(|p| !is_active_runtime_name(p))
 }
 
 fn find_potential_manifests_sysconfdir(suffix: &Path) -> impl Iterator<Item = PathBuf> {
@@ -135,38 +141,41 @@ fn find_potential_manifests_sysconfdir(suffix: &Path) -> impl Iterator<Item = Pa
         .into_iter()
         .flatten()
         .filter_map(|r| r.ok())
-        .filter_map(|entry| {
-            if let Ok(m) = entry.metadata() {
-                if m.is_file() || m.is_symlink() {
-                    return Some(entry.path());
-                }
-            }
-            None
+        .filter(|entry| {
+            // keep only files and symlinks
+            entry
+                .metadata()
+                .map(|m| m.is_file() || m.is_symlink())
+                .unwrap_or(false)
         })
+        .map(|entry| entry.path())
+        .filter(|p| !is_active_runtime_name(p))
 }
 
 pub struct LinuxActiveRuntimeData(Option<PathBuf>);
 
+fn possible_active_runtimes() -> impl Iterator<Item = PathBuf> {
+    let suffix = (&make_path_suffix()).join(ACTIVE_RUNTIME_FILENAME);
+    let etc_iter = once(make_sysconfdir(&suffix));
+    let xdg_iter = BaseDirectories::new()
+        .ok()
+        .into_iter()
+        .flat_map(move |d| d.find_config_files(&suffix));
+
+    xdg_iter
+        .chain(etc_iter)
+        .filter(|p| {
+            p.metadata()
+                .map(|m| m.is_file() || m.is_symlink())
+                .ok()
+                .unwrap_or_default()
+        })
+        .filter_map(|p| p.canonicalize().ok())
+}
+
 impl LinuxActiveRuntimeData {
     fn new() -> Self {
-        let suffix = (&make_path_suffix()).join(ACTIVE_RUNTIME_FILENAME);
-        let xdg_iter = BaseDirectories::new()
-            .ok()
-            .into_iter()
-            .flat_map(|d| d.find_config_files(&suffix));
-
-        let path = xdg_iter
-            .chain(once(make_sysconfdir(&suffix)))
-            .filter(|p| {
-                p.metadata()
-                    .map(|m| m.is_file() || m.is_symlink())
-                    .ok()
-                    .unwrap_or_default()
-            })
-            .filter_map(|p| p.canonicalize().ok())
-            .next();
-
-        LinuxActiveRuntimeData(path)
+        LinuxActiveRuntimeData(possible_active_runtimes().next())
     }
 
     fn check_runtime(&self, runtime: &LinuxRuntime) -> ActiveState {
@@ -183,26 +192,46 @@ impl Platform for LinuxPlatform {
     type PlatformRuntimeType = LinuxRuntime;
     type PlatformActiveData = LinuxActiveRuntimeData;
 
-    fn find_available_runtimes(&self) -> Result<Vec<Self::PlatformRuntimeType>, Error> {
+    fn find_available_runtimes(
+        &self,
+    ) -> Result<(Vec<Self::PlatformRuntimeType>, Vec<ManifestError>), Error> {
+        let mut known_manifests: HashSet<PathBuf> = HashSet::default();
+
         let manifest_files = find_potential_manifests_xdg(&self.path_suffix)
             .chain(find_potential_manifests_sysconfdir(&self.path_suffix))
-            .filter_map(|p| p.canonicalize().ok().map(|canonical| (p, canonical)))
-            .filter_map(
-                |(orig, canonical)| match LinuxRuntime::new(&orig, &canonical) {
-                    Ok(r) => Some(r),
-                    Err(e) => {
-                        eprintln!(
-                            "Error when trying to load {} -> {}: {}",
-                            orig.display(),
-                            canonical.display(),
-                            e
-                        );
-                        None
-                    }
-                },
-            )
-            .collect();
-        Ok(manifest_files)
+            .chain(possible_active_runtimes()) // put these last so they are only included if they mention a not-previously-found runtime
+            .filter_map(|p| p.canonicalize().ok().map(|canonical| (p, canonical)));
+
+        let mut runtimes = vec![];
+        let mut nonfatal_errors = vec![];
+
+        for (orig_path, canonical) in manifest_files {
+            if known_manifests.contains(&orig_path) {
+                continue;
+            }
+            if known_manifests.contains(&canonical) {
+                continue;
+            }
+            let runtime = match LinuxRuntime::new(&orig_path, &canonical) {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!(
+                        "Error when trying to load {} -> {}: {}",
+                        orig_path.display(),
+                        canonical.display(),
+                        e
+                    );
+                    nonfatal_errors.push(ManifestError(orig_path, e));
+                    continue;
+                }
+            };
+            runtimes.push(runtime);
+            if orig_path != canonical {
+                known_manifests.insert(canonical);
+            }
+            known_manifests.insert(orig_path);
+        }
+        Ok((runtimes, nonfatal_errors))
     }
 
     fn get_active_runtime_manifests(&self) -> Vec<PathBuf> {
