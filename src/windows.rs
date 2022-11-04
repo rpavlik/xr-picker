@@ -279,6 +279,12 @@ impl Platform for WindowsPlatform {
                 );
             }
         }
+        // Handle remaining narrow ones
+        for path in narrow.iter() {
+            if let Err(_) = collection.try_add(None, Some(path)) {
+                // ok if it's already in there
+            }
+        }
         Ok(collection.into())
     }
 
