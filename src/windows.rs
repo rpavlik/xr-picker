@@ -13,7 +13,10 @@ use std::{
     collections::{hash_map::RandomState, HashMap, HashSet},
     path::{Path, PathBuf},
 };
-use winreg::{enums::{HKEY_LOCAL_MACHINE, KEY_WRITE}, RegKey, RegValue};
+use winreg::{
+    enums::{HKEY_LOCAL_MACHINE, KEY_WRITE},
+    RegKey, RegValue,
+};
 
 #[derive(Debug, Clone)]
 pub struct WindowsRuntime {
@@ -90,7 +93,8 @@ impl PlatformRuntime for WindowsRuntime {
         ) -> Result<(), Error> {
             if let Some(path) = path {
                 if let Some(runtime) = runtime {
-                    let base = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey_with_flags(&path, KEY_WRITE)?;
+                    let base = RegKey::predef(HKEY_LOCAL_MACHINE)
+                        .open_subkey_with_flags(&path, KEY_WRITE)?;
                     base.set_value(ACTIVE_RUNTIME, &runtime.get_manifest_path().as_os_str())?;
                 }
             }
@@ -174,14 +178,12 @@ pub struct WindowsActiveRuntimeData {
 }
 
 fn check_active(active_runtime_manifest: &Option<PathBuf>, runtime: &Option<BaseRuntime>) -> bool {
-    match active_runtime_manifest.as_deref() {
-        Some(active_manifest) => match runtime {
-            Some(r) => r.get_manifest_path() == active_manifest,
-            None => false,
-        },
-        None => false,
+    match (active_runtime_manifest.as_deref(), runtime) {
+        (Some(active_manifest), Some(r)) => r.get_manifest_path() == active_manifest,
+        _ => false,
     }
 }
+
 impl WindowsActiveRuntimeData {
     fn new() -> Self {
         let native_active = get_active_runtime_manifest_path(make_prefix_key_native());
@@ -284,7 +286,7 @@ impl Platform for WindowsPlatform {
 
     fn get_active_runtime_manifests(&self) -> Vec<PathBuf> {
         let data = WindowsActiveRuntimeData::new();
-
+        // OK to move out of data because we just created it for this purpose
         data.native
             .into_iter()
             .chain(data.narrow.into_iter())
