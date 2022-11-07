@@ -168,7 +168,10 @@ fn header_with_refresh_button(ctx: &egui::Context) -> bool {
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.heading("OpenXR Runtime Picker");
-                ui.centered_and_justified(|ui| ui.button("Refresh").clicked())
+
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.button("Refresh").clicked()
+                })
                     .inner
             })
             .inner
