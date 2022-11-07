@@ -297,22 +297,18 @@ fn maybe_runtime(regkey: &RegKey, kv: (String, RegValue)) -> Option<PathBuf> {
 
 fn enumerate_reg_runtimes(base_key: &Path, reg_flags: u32) -> Vec<PathBuf> {
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-    match hklm.open_subkey_with_flags(
+    hklm.open_subkey_with_flags(
         base_key.to_str().unwrap(),
         reg_flags | KEY_READ | KEY_QUERY_VALUE,
-    ) {
-        Ok(avail) => {
-            let manifest_files = avail.enum_values().filter_map(|x| {
-                let x = x.ok()?;
-                maybe_runtime(&avail, x)
-            });
-            manifest_files.collect()
-        }
-        Err(_) => {
-            // we don't really care if that reg key isn't there, just return an empty vec.
-            vec![]
-        }
-    }
+    )
+    .map(|avail| {
+        let manifest_files = avail.enum_values().filter_map(|x| {
+            let x = x.ok()?;
+            maybe_runtime(&avail, x)
+        });
+        manifest_files.collect()
+    })
+    .unwrap_or_default()
 }
 
 /// Returns any non-fatal errors
