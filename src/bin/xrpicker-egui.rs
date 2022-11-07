@@ -126,6 +126,7 @@ impl<T: Platform> InnerState<T> {
         egui::Grid::new("runtimes")
             .striped(true)
             .min_col_width(ui.spacing().interact_size.x * 2.0) // widen to avoid resizing based on default runtime
+            .min_row_height(ui.spacing().interact_size.y * 2.5)
             .num_columns(4)
             .show(ui, |ui| -> Result<bool, Error> {
                 let mut repopulate = false;
