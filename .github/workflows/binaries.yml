@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2022, Collabora, Ltd.
+# SPDX-FileCopyrightText: 2022, GitHub
+# SPDX-License-Identifier: CC0-1.0
+
+name: Binaries
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build --release --verbose
+      - name: Archive binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-build
+          path: target/release/xrpicker-egui
+
+  build-win:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build --release --verbose
+      - name: Archive binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-build
+          path: target/release/xrpicker-egui.exe
