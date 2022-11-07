@@ -3,9 +3,28 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
+use std::io;
+
 use eframe::egui;
+use image::io::Reader as ImageReader;
 use itertools::Itertools;
 use xrpicker::{make_platform, platform::PlatformRuntime, Error, ManifestError, Platform};
+
+// const ICON_32: &[u8; 542] = include_bytes!("../../assets/icon/icon32.png");
+const ICON_48: &[u8; 727] = include_bytes!("../../assets/icon/icon48.png");
+
+fn load_icon(icon_data: &[u8]) -> Option<eframe::IconData> {
+    let mut reader = ImageReader::new(io::Cursor::new(icon_data));
+    reader.set_format(image::ImageFormat::Png);
+    let image = reader.decode().ok()?.into_rgba8();
+    let (width, height) = image.dimensions();
+    let rgba = image.into_raw();
+    Some(eframe::IconData {
+        rgba,
+        width,
+        height,
+    })
+}
 
 struct InnerState<T: Platform> {
     runtimes: Vec<T::PlatformRuntimeType>,
@@ -172,7 +191,7 @@ fn header_with_refresh_button(ctx: &egui::Context) -> bool {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     ui.button("Refresh").clicked()
                 })
-                    .inner
+                .inner
             })
             .inner
         })
@@ -224,7 +243,11 @@ impl<T: Platform> eframe::App for PickerApp<T> {
 }
 
 fn main() {
-    let options = eframe::NativeOptions::default();
+    let options = eframe::NativeOptions {
+        icon_data: load_icon(ICON_48),
+        // icon_data: load_icon(ICON_32),
+        ..Default::default()
+    };
     eframe::run_native(
         "OpenXR Runtime Picker",
         options,
