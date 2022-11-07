@@ -295,20 +295,24 @@ fn maybe_runtime(regkey: &RegKey, kv: (String, RegValue)) -> Option<PathBuf> {
     None
 }
 
-fn enumerate_reg_runtimes(base_key: &Path, reg_flags: u32) -> Result<Vec<PathBuf>, Error> {
+fn enumerate_reg_runtimes(base_key: &Path, reg_flags: u32) -> Vec<PathBuf> {
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-    let avail = hklm
-        .open_subkey_with_flags(
-            base_key.to_str().unwrap(),
-            reg_flags | KEY_READ | KEY_QUERY_VALUE,
-        )
-        .map_err(|e| Error::EnumerationError(format!("Registry read error: {}", e)))?;
-
-    let manifest_files = avail.enum_values().filter_map(|x| {
-        let x = x.ok()?;
-        maybe_runtime(&avail, x)
-    });
-    Ok(manifest_files.collect())
+    match hklm.open_subkey_with_flags(
+        base_key.to_str().unwrap(),
+        reg_flags | KEY_READ | KEY_QUERY_VALUE,
+    ) {
+        Ok(avail) => {
+            let manifest_files = avail.enum_values().filter_map(|x| {
+                let x = x.ok()?;
+                maybe_runtime(&avail, x)
+            });
+            manifest_files.collect()
+        }
+        Err(_) => {
+            // we don't really care if that reg key isn't there, just return an empty vec.
+            vec![]
+        }
+    }
 }
 
 /// Returns any non-fatal errors
@@ -337,13 +341,13 @@ impl Platform for WindowsPlatform {
 
         let manifests64 = match make_prefix_key_flags_64() {
             Some(flags) => enumerate_reg_runtimes(&avail_runtimes_key_path, flags),
-            None => Ok(Default::default()),
-        }?;
+            None => Default::default(),
+        };
 
         let manifests32 = match make_prefix_key_flags_32() {
             Some(flags) => enumerate_reg_runtimes(&avail_runtimes_key_path, flags),
-            None => Ok(Default::default()),
-        }?;
+            None => Default::default(),
+        };
 
         let manifest_32_by_parent_dir: HashMap<&Path, &Path, RandomState> = HashMap::from_iter(
             manifests32
