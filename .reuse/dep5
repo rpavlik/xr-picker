@@ -3,8 +3,8 @@ Upstream-Name: XR Picker
 Upstream-Contact: Ryan Pavlik <ryan.pavlik@collabora.com>
 Source: https://github.com/rpavlik/xr-picker
 
-# Sample paragraph, commented out:
-#
-# Files: src/*
-# Copyright: $YEAR $NAME <$CONTACT>
-# License: ...
+Files: assets/icon/*
+Copyright: 2022, Collabora, Ltd.
+  2020, Google
+License: Apache-2.0
+Comment: Based on the "menu-open" icon from Material Design
