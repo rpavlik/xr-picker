@@ -1,6 +1,8 @@
 // Copyright 2022, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+
 use eframe::egui;
 use itertools::Itertools;
 use xrpicker::{make_platform, platform::PlatformRuntime, Error, ManifestError, Platform};
