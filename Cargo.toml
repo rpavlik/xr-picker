@@ -8,6 +8,10 @@ name = "xrpicker"
 version = "0.1.0"
 license = "MIT OR Apache-2.0"
 
+[package.metadata.winres]
+FileDescription = "Choose your OpenXR runtime"
+LegalCopyright = "Copyright 2022, Collabora, Ltd."
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -27,3 +31,7 @@ xdg = "2.4"
 iswow64 = "0.1.0"
 special-folder = "0.2"
 winreg = "0.10"
+
+# To add icon to EXE
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
