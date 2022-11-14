@@ -3,10 +3,9 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-use std::io;
-
 use eframe::egui;
-use image::io::Reader as ImageReader;
+use image;
+
 use itertools::Itertools;
 use xrpicker::{
     make_platform, platform::PlatformRuntime, AppState, Error, PersistentAppState, Platform,
@@ -16,9 +15,8 @@ use xrpicker::{
 const ICON_48: &[u8; 727] = include_bytes!("../../assets/icon/icon48.png");
 
 fn load_icon(icon_data: &[u8]) -> Option<eframe::IconData> {
-    let mut reader = ImageReader::new(io::Cursor::new(icon_data));
-    reader.set_format(image::ImageFormat::Png);
-    let image = reader.decode().ok()?.into_rgba8();
+    let image = image::load_from_memory_with_format(icon_data, image::ImageFormat::Png).ok()?;
+    let image = image.into_rgba8();
     let (width, height) = image.dimensions();
     let rgba = image.into_raw();
     Some(eframe::IconData {
