@@ -4,4 +4,7 @@
 members = [
     "xrpicker-core",
     "xrpicker-egui",
+    "xrpicker-iced",
 ]
+
+resolver = "2"
