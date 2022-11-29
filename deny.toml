@@ -29,7 +29,14 @@ allow = [
     "CC0-1.0",
     "ISC",
     "MPL-2.0",
+    "MIT-0",
 ]
+
+[[licenses.exceptions]]
+# OFL here is just for the font that gets embedded, I think? Can't find anything marked OFL
+allow = ["OFL-1.1"]
+name = "iced_wgpu"
+version = "0.6.1"
 
 [bans]
 # Lint level for when multiple versions of the same crate are detected
