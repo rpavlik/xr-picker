@@ -1,7 +1,6 @@
 // Copyright 2022, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use eframe::epaint::ahash::HashSet;
 use xdg::{BaseDirectories, BaseDirectoriesError};
 
 use crate::{
@@ -15,7 +14,7 @@ use std::{
     iter::once,
     os::unix::{self, prelude::OsStrExt},
     path::{Path, PathBuf},
-    time::{SystemTime, UNIX_EPOCH},
+    time::{SystemTime, UNIX_EPOCH}, collections::HashSet,
 };
 
 const ETC: &str = "/etc";
