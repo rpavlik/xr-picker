@@ -1,7 +1,6 @@
 // Copyright 2022, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use eframe::epaint::ahash::HashSet;
 use xdg::{BaseDirectories, BaseDirectoriesError};
 
 use crate::{
@@ -15,7 +14,7 @@ use std::{
     iter::once,
     os::unix::{self, prelude::OsStrExt},
     path::{Path, PathBuf},
-    time::{SystemTime, UNIX_EPOCH},
+    time::{SystemTime, UNIX_EPOCH}, collections::HashSet,
 };
 
 const ETC: &str = "/etc";
@@ -155,7 +154,7 @@ fn find_potential_manifests_sysconfdir(suffix: &Path) -> impl Iterator<Item = Pa
 pub struct LinuxActiveRuntimeData(Option<PathBuf>);
 
 fn possible_active_runtimes() -> impl Iterator<Item = PathBuf> {
-    let suffix = (&make_path_suffix()).join(ACTIVE_RUNTIME_FILENAME);
+    let suffix = make_path_suffix().join(ACTIVE_RUNTIME_FILENAME);
     let etc_iter = once(make_sysconfdir(&suffix));
     let xdg_iter = BaseDirectories::new()
         .ok()

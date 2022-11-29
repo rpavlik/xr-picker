@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2022, Collabora, Ltd.
+# SPDX-License-Identifier: CC0-1.0
+
+[package]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "xrpicker-egui"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+eframe = {version = "0.19", features = ["persistence"]}
+egui-winit = "0.19"
+image = "0.24"
+itertools = "0.10"
+xrpicker = {path = "../xrpicker-core"}

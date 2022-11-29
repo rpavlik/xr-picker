@@ -8,7 +8,7 @@ use std::io;
 use eframe::egui;
 use image::io::Reader as ImageReader;
 use itertools::Itertools;
-use xrpicker::{make_platform, platform::PlatformRuntime, Error, ManifestError, Platform};
+use xrpicker::{make_platform, platform::PlatformRuntime, AppState, Error, Platform};
 
 // const ICON_32: &[u8; 542] = include_bytes!("../../assets/icon/icon32.png");
 const ICON_48: &[u8; 727] = include_bytes!("../../assets/icon/icon48.png");
@@ -26,60 +26,14 @@ fn load_icon(icon_data: &[u8]) -> Option<eframe::IconData> {
     })
 }
 
-struct InnerState<T: Platform> {
-    runtimes: Vec<T::PlatformRuntimeType>,
-    nonfatal_errors: Vec<ManifestError>,
-    active_data: T::PlatformActiveData,
-}
-
-impl<T: Platform> InnerState<T> {
-    fn new(platform: &T) -> Result<Self, Error> {
-        let (runtimes, nonfatal_errors) = platform.find_available_runtimes()?;
-        let active_data = platform.get_active_data();
-        Ok(Self {
-            runtimes,
-            nonfatal_errors,
-            active_data,
-        })
-    }
-
-    /// "refresh" existing state: we don't re-create if we can avoid it,
-    /// to preserve the order of existing entries.
-    fn refresh(self, platform: &T) -> Result<Self, Error> {
-        let (new_runtimes, new_nonfatal_errors) = platform.find_available_runtimes()?;
-        let active_data = platform.get_active_data();
-
-        // start with existing runtimes
-        let runtimes = self
-            .runtimes
-            .into_iter()
-            // chain on the new ones
-            .chain(new_runtimes.into_iter())
-            // only keep the unique ones, preferring the earlier ones
-            .unique_by(|r| {
-                // compare by the list of manifests used
-                r.get_manifests()
-                    .into_iter()
-                    .map(|p| p.to_owned())
-                    .collect::<Vec<_>>()
-            })
-            .collect();
-        Ok(Self {
-            runtimes,
-            nonfatal_errors: new_nonfatal_errors,
-            active_data,
-        })
-    }
-}
-
 struct PickerApp<T: Platform> {
     platform: T,
-    state: Option<Result<InnerState<T>, Error>>,
+    state: Option<Result<AppState<T>, Error>>,
 }
 
 impl<T: Platform> PickerApp<T> {
     fn new(platform: T) -> Self {
-        let state = Some(InnerState::new(&platform));
+        let state = Some(AppState::new(&platform));
 
         PickerApp { platform, state }
     }
@@ -97,11 +51,11 @@ fn add_about_contents(ui: &mut egui::Ui) {
 
 /// Trait implemented for all states of the GUI.
 trait GuiView<T: Platform> {
-    fn update(self, platform: &T, ctx: &egui::Context) -> Result<InnerState<T>, Error>;
+    fn update(self, platform: &T, ctx: &egui::Context) -> Result<AppState<T>, Error>;
 }
 
 impl<T: Platform> GuiView<T> for Error {
-    fn update(self, platform: &T, ctx: &egui::Context) -> Result<InnerState<T>, Error> {
+    fn update(self, platform: &T, ctx: &egui::Context) -> Result<AppState<T>, Error> {
         egui::TopBottomPanel::bottom("about").show(ctx, add_about_contents);
         let repopulate = egui::CentralPanel::default()
             .show(ctx, |ui| {
@@ -114,15 +68,24 @@ impl<T: Platform> GuiView<T> for Error {
             .inner;
 
         if repopulate {
-            return InnerState::new(platform);
+            return AppState::new(platform);
         }
         Err(self)
     }
 }
 
-// These are GUI-specific impls
-impl<T: Platform> InnerState<T> {
+// These are GUI-specific impls on our AppState
+trait EguiAppState<T: Platform> {
     /// Add the non-fatal errors from manifest parsing to the UI
+    fn add_non_fatal_errors_listing(&self, ui: &mut egui::Ui);
+
+    /// Adds a grid with the runtimes to the given `egui::Ui`, handling "make active" button presses.
+    ///
+    /// Returns an error (in which case that becomes the new state), or a boolean indicating whether to refresh.
+    fn add_runtime_grid(&self, platform: &T, ui: &mut egui::Ui) -> Result<bool, Error>;
+}
+
+impl<T: Platform> EguiAppState<T> for AppState<T> {
     fn add_non_fatal_errors_listing(&self, ui: &mut egui::Ui) {
         if self.nonfatal_errors.is_empty() {
             return;
@@ -137,9 +100,6 @@ impl<T: Platform> InnerState<T> {
         );
     }
 
-    /// Adds a grid with the runtimes to the given `egui::Ui`, handling "make active" button presses.
-    ///
-    /// Returns an error (in which case that becomes the new state), or a boolean indicating whether to refresh.
     fn add_runtime_grid(&self, platform: &T, ui: &mut egui::Ui) -> Result<bool, Error> {
         // The closure this calls returns true if we should refresh the list
         egui::Grid::new("runtimes")
@@ -198,8 +158,8 @@ fn header_with_refresh_button(ctx: &egui::Context) -> bool {
         .inner
 }
 
-impl<T: Platform> GuiView<T> for InnerState<T> {
-    fn update(self, platform: &T, ctx: &egui::Context) -> Result<InnerState<T>, Error> {
+impl<T: Platform> GuiView<T> for AppState<T> {
+    fn update(self, platform: &T, ctx: &egui::Context) -> Result<AppState<T>, Error> {
         egui::TopBottomPanel::bottom("about").show(ctx, add_about_contents);
 
         if !self.nonfatal_errors.is_empty() {
@@ -221,8 +181,8 @@ impl<T: Platform> GuiView<T> for InnerState<T> {
     }
 }
 
-impl<T: Platform> GuiView<T> for Result<InnerState<T>, Error> {
-    fn update(self, platform: &T, ctx: &egui::Context) -> Result<InnerState<T>, Error> {
+impl<T: Platform> GuiView<T> for Result<AppState<T>, Error> {
+    fn update(self, platform: &T, ctx: &egui::Context) -> Result<AppState<T>, Error> {
         match self {
             Ok(state) => state.update(platform, ctx),
             Err(e) => e.update(platform, ctx),

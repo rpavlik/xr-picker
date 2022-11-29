@@ -10,6 +10,9 @@ pub const OPENXR: &str = "openxr";
 pub(crate) mod manifest;
 pub mod platform;
 pub(crate) mod runtime;
+mod app_state;
+
+pub use app_state::AppState;
 
 use std::{fmt::Display, io, path::PathBuf};
 
