@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2022, Collabora, Ltd.
+# SPDX-License-Identifier: CC0-1.0
+
+targets = [
+    { triple = "x86_64-unknown-linux-gnu" },
+    { triple = "x86_64-pc-windows-msvc" },
+]
+
+[advisories]
+ignore = [
+    "RUSTSEC-2022-0048", # xml-rs unmaintained, but only used by some deps for codegen, not on arbitrary input.
+]
+
+
+[licenses]
+# The lint level for crates which do not have a detectable license
+unlicensed = "deny"
+copyleft = "warn"
+default = "deny"
+confidence-threshold = 0.8
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Unicode-DFS-2016",
+    "BSD-3-Clause",
+    "BSD-2-Clause",
+    "BSL-1.0",
+    "Zlib",
+    "CC0-1.0",
+    "ISC",
+    "MPL-2.0",
+]
+
+[bans]
+# Lint level for when multiple versions of the same crate are detected
+multiple-versions = "warn"
+# Lint level for when a crate version requirement is `*`
+# wildcards = "warn"
