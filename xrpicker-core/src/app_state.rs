@@ -3,8 +3,12 @@
 
 use itertools::Itertools;
 
-use crate::{Platform, ManifestError, Error, platform::PlatformRuntime};
+use crate::{platform::PlatformRuntime, Error, ManifestError, Platform};
 
+/// Generic state data for the app in a "non-error" state
+///
+/// GUI code will likely implement new traits for this,
+/// as well as wrap it in a struct (probably one that owns a Platform implementation too)
 pub struct AppState<T: Platform> {
     pub runtimes: Vec<T::PlatformRuntimeType>,
     pub nonfatal_errors: Vec<ManifestError>,
@@ -12,6 +16,7 @@ pub struct AppState<T: Platform> {
 }
 
 impl<T: Platform> AppState<T> {
+    /// Try creating state from scratch
     pub fn new(platform: &T) -> Result<Self, Error> {
         let (runtimes, nonfatal_errors) = platform.find_available_runtimes()?;
         let active_data = platform.get_active_data();
