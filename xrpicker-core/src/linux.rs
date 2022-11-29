@@ -154,7 +154,7 @@ fn find_potential_manifests_sysconfdir(suffix: &Path) -> impl Iterator<Item = Pa
 pub struct LinuxActiveRuntimeData(Option<PathBuf>);
 
 fn possible_active_runtimes() -> impl Iterator<Item = PathBuf> {
-    let suffix = (&make_path_suffix()).join(ACTIVE_RUNTIME_FILENAME);
+    let suffix = make_path_suffix().join(ACTIVE_RUNTIME_FILENAME);
     let etc_iter = once(make_sysconfdir(&suffix));
     let xdg_iter = BaseDirectories::new()
         .ok()
