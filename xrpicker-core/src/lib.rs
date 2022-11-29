@@ -7,10 +7,10 @@ pub const ACTIVE_RUNTIME_FILENAME: &str = "active_runtime.json";
 /// Directory used in constructing paths
 pub const OPENXR: &str = "openxr";
 
+mod app_state;
 pub(crate) mod manifest;
 pub mod platform;
 pub(crate) mod runtime;
-mod app_state;
 
 pub use app_state::AppState;
 
@@ -88,10 +88,14 @@ impl ActiveState {
 mod linux;
 #[cfg(unix)]
 pub use linux::make_platform;
+#[cfg(unix)]
+pub type ConcretePlatform = linux::LinuxPlatform;
 
 #[cfg(windows)]
 mod windows;
 #[cfg(windows)]
 pub use windows::make_platform;
+#[cfg(windows)]
+pub type ConcretePlatform = windows::WindowsPlatform;
 
 pub use platform::Platform;
