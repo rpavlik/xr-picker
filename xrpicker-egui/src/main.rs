@@ -200,7 +200,21 @@ impl<T: Platform> GuiView<T> for AppState<T> {
                 .show(ctx, |ui| self.add_non_fatal_errors_listing(ui));
         }
 
-        let should_refresh: bool = header_with_refresh_button(ctx);
+        let mut new_extra_paths = vec![];
+
+        // handle drag and drop
+        ctx.input(|i| {
+            if !i.raw.dropped_files.is_empty() {
+                for file in &i.raw.dropped_files {
+                    if let Some(p) = &file.path {
+                        println!("Got a new path from drag and drop: {}", p.display());
+                        new_extra_paths.push(p.clone());
+                    }
+                }
+            }
+        });
+
+        let should_refresh: bool = header_with_refresh_button(ctx) || !new_extra_paths.is_empty();
 
         // Central panel must come last
         let should_refresh = should_refresh
