@@ -200,9 +200,14 @@ impl<T: Platform> eframe::App for PickerApp<T> {
             frame.close()
         }
     }
+
+    // Do not save window size/position, it can get messed up.
+    fn persist_egui_memory(&self) -> bool {
+        false
+    }
 }
 
-fn main() {
+fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         icon_data: load_icon(ICON_48),
         // icon_data: load_icon(ICON_32),
@@ -212,5 +217,5 @@ fn main() {
         "OpenXR Runtime Picker",
         options,
         Box::new(|_cc| Box::new(PickerApp::new(make_platform()))),
-    );
+    )
 }
