@@ -1,4 +1,4 @@
-// Copyright 2022, Collabora, Ltd.
+// Copyright 2022-2023, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
@@ -168,16 +168,29 @@ impl<T: Platform> EguiAppState<T> for AppState<T> {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum HeaderAction {
+    Nothing,
+    ShouldRefresh,
+    ShouldBrowse,
+}
+
 /// Creates a top panel with a header and a refresh button.
 /// returns true if it should refresh
-fn header_with_refresh_button(ctx: &egui::Context) -> bool {
+fn header_with_browse_and_refresh_button(ctx: &egui::Context) -> HeaderAction {
     egui::TopBottomPanel::top("header")
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.heading("OpenXR Runtime Picker");
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.button("Refresh").clicked()
+                    if ui.button("Refresh").clicked() {
+                        return HeaderAction::ShouldRefresh;
+                    }
+                    if ui.button("Browse for manifest").clicked() {
+                        return HeaderAction::ShouldBrowse;
+                    }
+                    HeaderAction::Nothing
                 })
                 .inner
             })
@@ -200,7 +213,17 @@ impl<T: Platform> GuiView<T> for AppState<T> {
                 .show(ctx, |ui| self.add_non_fatal_errors_listing(ui));
         }
 
+        let header_action = header_with_browse_and_refresh_button(ctx);
+
         let mut new_extra_paths = vec![];
+
+        // handle browse button
+        if header_action == HeaderAction::ShouldBrowse {
+            if let Some(p) = rfd::FileDialog::new().pick_file() {
+                println!("Got a new path from file dialog: {}", p.display());
+                new_extra_paths.push(p);
+            }
+        }
 
         // handle drag and drop
         ctx.input(|i| {
@@ -214,7 +237,8 @@ impl<T: Platform> GuiView<T> for AppState<T> {
             }
         });
 
-        let should_refresh: bool = header_with_refresh_button(ctx) || !new_extra_paths.is_empty();
+        let should_refresh: bool =
+            header_action == HeaderAction::ShouldRefresh || !new_extra_paths.is_empty();
 
         // Central panel must come last
         let should_refresh = should_refresh
