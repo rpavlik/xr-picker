@@ -1,7 +1,6 @@
-// Copyright 2022, Collabora, Ltd.
+// Copyright 2022-2023, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use itertools::Itertools;
 use xdg::{BaseDirectories, BaseDirectoriesError};
 
 use crate::{
@@ -11,11 +10,12 @@ use crate::{
     ActiveState, Error, ManifestError, ACTIVE_RUNTIME_FILENAME, OPENXR, OPENXR_MAJOR_VERSION,
 };
 use std::{
+    collections::HashSet,
     fs,
     iter::once,
     os::unix::{self, prelude::OsStrExt},
     path::{Path, PathBuf},
-    time::{SystemTime, UNIX_EPOCH}, collections::HashSet,
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 const ETC: &str = "/etc";
@@ -197,12 +197,14 @@ impl Platform for LinuxPlatform {
 
     fn find_available_runtimes(
         &self,
+        extra_paths: Box<dyn '_ + Iterator<Item = PathBuf>>,
     ) -> Result<(Vec<Self::PlatformRuntimeType>, Vec<ManifestError>), Error> {
         let mut known_manifests: HashSet<PathBuf> = HashSet::default();
 
         let manifest_files = find_potential_manifests_xdg(&self.path_suffix)
             .chain(find_potential_manifests_sysconfdir(&self.path_suffix))
-            .chain(possible_active_runtimes()) // put these last so they are only included if they mention a not-previously-found runtime
+            .chain(possible_active_runtimes()) // put these almost last so they are only included if they mention a not-previously-found runtime
+            .chain(extra_paths)
             .filter_map(|p| p.canonicalize().ok().map(|canonical| (p, canonical)));
 
         let mut runtimes = vec![];

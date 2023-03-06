@@ -8,7 +8,9 @@ use std::io;
 use eframe::egui;
 use image::io::Reader as ImageReader;
 use itertools::Itertools;
-use xrpicker::{make_platform, platform::PlatformRuntime, AppState, Error, Platform};
+use xrpicker::{
+    make_platform, platform::PlatformRuntime, AppState, Error, PersistentAppState, Platform,
+};
 
 // const ICON_32: &[u8; 542] = include_bytes!("../../assets/icon/icon32.png");
 const ICON_48: &[u8; 727] = include_bytes!("../../assets/icon/icon48.png");
@@ -29,13 +31,29 @@ fn load_icon(icon_data: &[u8]) -> Option<eframe::IconData> {
 struct PickerApp<T: Platform> {
     platform: T,
     state: Option<Result<AppState<T>, Error>>,
+    persistent_state: PersistentAppState,
 }
 
 impl<T: Platform> PickerApp<T> {
-    fn new(platform: T) -> Self {
-        let state = Some(AppState::new(&platform));
+    fn new(platform: T, cc: &eframe::CreationContext<'_>) -> Self {
+        let persistent_state = cc
+            .storage
+            .and_then(|storage| eframe::get_value::<PersistentAppState>(storage, eframe::APP_KEY))
+            .unwrap_or_default();
+        let state = Some(AppState::new_with_persistent_state(
+            &platform,
+            &persistent_state,
+        ));
 
-        PickerApp { platform, state }
+        PickerApp {
+            platform,
+            state,
+            persistent_state,
+        }
+    }
+
+    fn store_persistent_data(&self, storage: &mut dyn eframe::Storage) {
+        eframe::set_value(storage, eframe::APP_KEY, &self.persistent_state);
     }
 }
 
@@ -51,11 +69,21 @@ fn add_about_contents(ui: &mut egui::Ui) {
 
 /// Trait implemented for all states of the GUI.
 trait GuiView<T: Platform> {
-    fn update(self, platform: &T, ctx: &egui::Context) -> Result<AppState<T>, Error>;
+    fn update(
+        self,
+        platform: &T,
+        ctx: &egui::Context,
+        persistent_state: &mut PersistentAppState,
+    ) -> Result<AppState<T>, Error>;
 }
 
 impl<T: Platform> GuiView<T> for Error {
-    fn update(self, platform: &T, ctx: &egui::Context) -> Result<AppState<T>, Error> {
+    fn update(
+        self,
+        platform: &T,
+        ctx: &egui::Context,
+        _persistent_state: &mut PersistentAppState,
+    ) -> Result<AppState<T>, Error> {
         egui::TopBottomPanel::bottom("about").show(ctx, add_about_contents);
         let repopulate = egui::CentralPanel::default()
             .show(ctx, |ui| {
@@ -159,7 +187,12 @@ fn header_with_refresh_button(ctx: &egui::Context) -> bool {
 }
 
 impl<T: Platform> GuiView<T> for AppState<T> {
-    fn update(self, platform: &T, ctx: &egui::Context) -> Result<AppState<T>, Error> {
+    fn update(
+        self,
+        platform: &T,
+        ctx: &egui::Context,
+        persistent_state: &mut PersistentAppState,
+    ) -> Result<AppState<T>, Error> {
         egui::TopBottomPanel::bottom("about").show(ctx, add_about_contents);
 
         if !self.nonfatal_errors.is_empty() {
@@ -174,18 +207,24 @@ impl<T: Platform> GuiView<T> for AppState<T> {
             || egui::CentralPanel::default()
                 .show(ctx, |ui| self.add_runtime_grid(platform, ui))
                 .inner?; // get at the nested closure's return value (whether to repopulate), after handling errors.
+        persistent_state.append_new_extra_paths(new_extra_paths);
         if should_refresh {
-            return self.refresh(platform);
+            return self.refresh(platform, Some(persistent_state));
         }
         Ok(self)
     }
 }
 
 impl<T: Platform> GuiView<T> for Result<AppState<T>, Error> {
-    fn update(self, platform: &T, ctx: &egui::Context) -> Result<AppState<T>, Error> {
+    fn update(
+        self,
+        platform: &T,
+        ctx: &egui::Context,
+        persistent_state: &mut PersistentAppState,
+    ) -> Result<AppState<T>, Error> {
         match self {
-            Ok(state) => state.update(platform, ctx),
-            Err(e) => e.update(platform, ctx),
+            Ok(state) => state.update(platform, ctx, persistent_state),
+            Err(e) => e.update(platform, ctx, persistent_state),
         }
     }
 }
@@ -193,7 +232,7 @@ impl<T: Platform> GuiView<T> for Result<AppState<T>, Error> {
 impl<T: Platform> eframe::App for PickerApp<T> {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         if let Some(state_or_error) = self.state.take() {
-            let new_state = state_or_error.update(&self.platform, ctx);
+            let new_state = state_or_error.update(&self.platform, ctx, &mut self.persistent_state);
             self.state.replace(new_state);
         } else {
             // unlikely/impossible to get here, but let's clean up nicely if we do.
@@ -204,6 +243,10 @@ impl<T: Platform> eframe::App for PickerApp<T> {
     // Do not save window size/position, it can get messed up.
     fn persist_egui_memory(&self) -> bool {
         false
+    }
+
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        self.store_persistent_data(storage)
     }
 }
 
@@ -216,6 +259,6 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "OpenXR Runtime Picker",
         options,
-        Box::new(|_cc| Box::new(PickerApp::new(make_platform()))),
+        Box::new(|cc| Box::new(PickerApp::new(make_platform(), cc))),
     )
 }

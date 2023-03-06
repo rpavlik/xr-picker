@@ -13,7 +13,7 @@ pub(crate) mod manifest;
 pub mod platform;
 pub(crate) mod runtime;
 
-pub use app_state::AppState;
+pub use app_state::{AppState, PersistentAppState};
 
 use std::{fmt::Display, io, path::PathBuf};
 

@@ -1,4 +1,4 @@
-// Copyright 2022, Collabora, Ltd.
+// Copyright 2022-2023, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use std::path::{Path, PathBuf};
@@ -32,6 +32,7 @@ pub trait Platform {
     /// Enumerate all available runtimes we might be aware of.
     fn find_available_runtimes(
         &self,
+        extra_paths: Box<dyn '_ + Iterator<Item = PathBuf>>,
     ) -> Result<(Vec<Self::PlatformRuntimeType>, Vec<ManifestError>), Error>;
 
     fn get_active_runtime_manifests(&self) -> Vec<PathBuf>;
