@@ -1,6 +1,7 @@
 // Copyright 2022, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use itertools::Itertools;
 use xdg::{BaseDirectories, BaseDirectoriesError};
 
 use crate::{
@@ -156,10 +157,13 @@ pub struct LinuxActiveRuntimeData(Option<PathBuf>);
 fn possible_active_runtimes() -> impl Iterator<Item = PathBuf> {
     let suffix = make_path_suffix().join(ACTIVE_RUNTIME_FILENAME);
     let etc_iter = once(make_sysconfdir(&suffix));
+    // Warning: BaseDirectories returns increasing order of importance, which is
+    // opposite of what we want, so we reverse it.
     let xdg_iter = BaseDirectories::new()
         .ok()
         .into_iter()
-        .flat_map(move |d| d.find_config_files(&suffix));
+        .flat_map(move |d| d.find_config_files(&suffix))
+        .rev();
 
     xdg_iter
         .chain(etc_iter)
