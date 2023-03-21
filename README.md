@@ -5,6 +5,7 @@ Copyright 2023, Collabora, Ltd.
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
+[![unsafe forbidden](https://img.shields.io/badge/unsafe-forbidden-success.svg)](https://github.com/rust-secure-code/safety-dance/)
 [![REUSE status](https://api.reuse.software/badge/github.com/rpavlik/xr-picker)](https://api.reuse.software/info/github.com/rpavlik/xr-picker)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
