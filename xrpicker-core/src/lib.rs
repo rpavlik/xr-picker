@@ -1,4 +1,4 @@
-// Copyright 2022, Collabora, Ltd.
+// Copyright 2022-2023, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 pub const OPENXR_MAJOR_VERSION: i32 = 1;
@@ -8,6 +8,7 @@ pub const ACTIVE_RUNTIME_FILENAME: &str = "active_runtime.json";
 pub const OPENXR: &str = "openxr";
 
 mod app_state;
+#[cfg(windows)]
 pub(crate) mod arch_detect;
 pub(crate) mod manifest;
 pub mod platform;
