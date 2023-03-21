@@ -82,7 +82,7 @@ impl<T: Platform> GuiView<T> for Error {
         self,
         platform: &T,
         ctx: &egui::Context,
-        _persistent_state: &mut PersistentAppState,
+        persistent_state: &mut PersistentAppState,
     ) -> Result<AppState<T>, Error> {
         egui::TopBottomPanel::bottom("about").show(ctx, add_about_contents);
         let repopulate = egui::CentralPanel::default()
@@ -96,7 +96,7 @@ impl<T: Platform> GuiView<T> for Error {
             .inner;
 
         if repopulate {
-            return AppState::new(platform);
+            return AppState::new_with_persistent_state(platform, &persistent_state);
         }
         Err(self)
     }
