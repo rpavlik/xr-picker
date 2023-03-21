@@ -2,8 +2,55 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use itertools::Itertools;
+use serde::{Deserialize, Serialize};
 
 use crate::{platform::PlatformRuntime, Error, ManifestError, Platform};
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct PersistentAppState {
+    /// The extra paths provided by the user: the only thing we really want to serialize
+    pub extra_paths: Vec<PathBuf>,
+}
+
+impl PersistentAppState {
+    pub fn append_new_extra_paths(&mut self, new_extra_paths: Vec<PathBuf>) {
+        if !new_extra_paths.is_empty() {
+            let old_extra_paths = std::mem::take(&mut self.extra_paths);
+            self.extra_paths.extend(
+                old_extra_paths
+                    .into_iter()
+                    .chain(new_extra_paths.into_iter())
+                    .unique(),
+            );
+        }
+    }
+}
+
+trait IterateExtraPaths {
+    fn iterate_extra_paths(&self) -> Box<dyn '_ + Iterator<Item = PathBuf>>;
+}
+
+impl IterateExtraPaths for PersistentAppState {
+    fn iterate_extra_paths(&self) -> Box<dyn '_ + Iterator<Item = PathBuf>> {
+        Box::new(self.extra_paths.iter().cloned())
+    }
+}
+impl IterateExtraPaths for Option<&PersistentAppState> {
+    fn iterate_extra_paths(&self) -> Box<dyn '_ + Iterator<Item = PathBuf>> {
+        match self {
+            Some(state) => Box::new(state.extra_paths.iter().cloned()),
+            None => Box::new(iter::empty()),
+        }
+    }
+}
+impl IterateExtraPaths for Option<PersistentAppState> {
+    fn iterate_extra_paths(&self) -> Box<dyn '_ + Iterator<Item = PathBuf>> {
+        match self {
+            Some(state) => Box::new(state.extra_paths.iter().cloned()),
+            None => Box::new(iter::empty()),
+        }
+    }
+}
 
 /// Generic state data for the app in a "non-error" state
 ///
