@@ -7,8 +7,59 @@ criteria = "safe-to-deploy"
 delta = "0.10.3 -> 0.10.4"
 notes = "Fixes a soundness error."
 
+[[audits.emath]]
+who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
+criteria = "safe-to-deploy"
+delta = "0.19.0 -> 0.21.0"
+notes = "Only additional algorithm and simple, safe data structure added."
+
+[[audits.instant]]
+who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
+criteria = "safe-to-run"
+version = "0.1.12"
+notes = """
+checked_add() and checked_sub() on SystemTime both fail to actually check,
+but only float weirdness may result.
+"""
+
+[[audits.iswow64]]
+who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
+criteria = "safe-to-deploy"
+version = "0.1.0"
+notes = """
+Simple wrapper around Win32 API, that looks correct
+according to the Microsoft documentation.
+"""
+
+[[audits.rustversion]]
+who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.9 -> 1.0.12"
+notes = "Changes only affect documentation and build process dependencies."
+
+[[audits.special-folder]]
+who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
+criteria = "safe-to-deploy"
+version = "0.2.2"
+notes = """
+Simple wrapper around Win32 API, that looks correct
+according to the Microsoft documentation.
+"""
+
 [[audits.unicode-ident]]
 who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
 criteria = "safe-to-deploy"
 delta = "1.0.6 -> 1.0.8"
 notes = "Changes only affect documentation."
+
+[[audits.windows-targets]]
+who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
+criteria = "safe-to-deploy"
+delta = "0.42.1 -> 0.42.2"
+notes = "Only patch updates to dependencies."
+
+[[audits.windows-targets]]
+who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
+criteria = "safe-to-deploy"
+delta = "0.42.1 -> 0.42.2"
+notes = "Only patch updates to dependencies."
