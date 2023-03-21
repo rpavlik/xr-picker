@@ -1,7 +1,7 @@
-# SPDX-FileCopyrightText: 2022, Collabora, Ltd.
+# SPDX-FileCopyrightText: 2022-2023, Collabora, Ltd.
 # SPDX-License-Identifier: CC0-1.0
 [workspace]
 members = [
     "xrpicker-core",
-    "xrpicker-egui",
+    "xrpicker-gui",
 ]

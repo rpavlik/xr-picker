@@ -1,10 +1,13 @@
 // Copyright 2022-2023, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+//! Not actually windows specific, but not yet used on Linux.
+
 use crate::{runtime::BaseRuntime, Error, ManifestError};
 use object::{self, read::Object};
 use std::{fs, path::Path};
 
+/// A single manifest may only be one of these values.
 pub(crate) enum RuntimeBitness {
     /// Uses shared library search path to find the right binary per arch
     Universal,
@@ -14,6 +17,8 @@ pub(crate) enum RuntimeBitness {
     BitWidth64,
 }
 
+/// Investigate a manifest and the runtime binary to which it refers, to identify whether it is
+/// 32-bit, 64-bit, or universal (using shared library search path)
 pub(crate) fn get_runtime_bitness(manifest_path: &Path) -> Result<RuntimeBitness, ManifestError> {
     let runtime =
         BaseRuntime::new(manifest_path).map_err(|e| ManifestError(manifest_path.to_owned(), e))?;
