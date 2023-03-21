@@ -17,18 +17,20 @@ ignore = [
 unlicensed = "deny"
 copyleft = "warn"
 default = "deny"
-confidence-threshold = 0.8
+confidence-threshold = 0.93
 allow = [
     "MIT",
     "Apache-2.0",
-    "Unicode-DFS-2016",
     "BSD-3-Clause",
     "BSD-2-Clause",
     "BSL-1.0",
     "Zlib",
-    "CC0-1.0",
     "ISC",
-    "MPL-2.0",
+    "OFL-1.1",
+]
+exceptions = [
+    { allow = ["LicenseRef-UFL-1.0"], name = "epaint" }, # default font - in exception because not standard SPDX ID
+    { allow = ["Unicode-DFS-2016"], name = "unicode-ident" }, # Unicode data
 ]
 
 [bans]
