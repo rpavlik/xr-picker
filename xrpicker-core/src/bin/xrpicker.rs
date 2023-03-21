@@ -1,12 +1,16 @@
-// Copyright 2022, Collabora, Ltd.
+// Copyright 2022-2023, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
+
+use std::iter;
 
 use xrpicker::{make_platform, platform::PlatformRuntime, Platform};
 
 fn main() {
     let platform = make_platform();
     let active_data = platform.get_active_data();
-    let (runtimes, nonfatal_errors) = platform.find_available_runtimes().unwrap();
+    let (runtimes, nonfatal_errors) = platform
+        .find_available_runtimes(Box::new(iter::empty()))
+        .unwrap();
     println!("\nRuntimes:");
     for runtime in runtimes {
         println!(

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::{
+    arch_detect::{get_runtime_bitness, PushUnique, RuntimeBitness},
     manifest::GenericManifest,
     platform::{Platform, PlatformRuntime},
     runtime::BaseRuntime,
@@ -324,10 +325,34 @@ fn manually_add_runtimes(collection: &mut RuntimeCollection) -> Vec<ManifestErro
     nonfatal_errors
 }
 
+fn process_extra_manifests(
+    extra_paths: impl IntoIterator<Item = PathBuf>,
+) -> (Vec<PathBuf>, Vec<PathBuf>, Vec<ManifestError>) {
+    let mut paths32 = vec![];
+    let mut paths64 = vec![];
+    let mut nonfatal_errors = vec![];
+    for path in extra_paths {
+        match get_runtime_bitness(&path) {
+            Ok(bitness) => match bitness {
+                RuntimeBitness::Universal => {
+                    paths32.push(path.clone());
+                    paths64.push(path);
+                }
+                RuntimeBitness::BitWidth32 => paths32.push(path),
+                RuntimeBitness::BitWidth64 => paths64.push(path),
+            },
+            Err(e) => nonfatal_errors.push(e),
+        }
+    }
+    (paths32, paths64, nonfatal_errors)
+}
+
 impl Platform for WindowsPlatform {
     type PlatformRuntimeType = WindowsRuntime;
+
     fn find_available_runtimes(
         &self,
+        extra_paths: Box<dyn '_ + Iterator<Item = PathBuf>>,
     ) -> Result<(Vec<Self::PlatformRuntimeType>, Vec<ManifestError>), Error> {
         let mut collection = RuntimeCollection::default();
 
@@ -335,15 +360,28 @@ impl Platform for WindowsPlatform {
 
         let avail_runtimes_key_path = make_prefix_key().join(AVAILABLE_RUNTIMES);
 
-        let manifests64 = match make_prefix_key_flags_64() {
+        let mut manifests64 = match make_prefix_key_flags_64() {
             Some(flags) => enumerate_reg_runtimes(&avail_runtimes_key_path, flags),
             None => Default::default(),
         };
 
-        let manifests32 = match make_prefix_key_flags_32() {
+        let mut manifests32 = match make_prefix_key_flags_32() {
             Some(flags) => enumerate_reg_runtimes(&avail_runtimes_key_path, flags),
             None => Default::default(),
         };
+
+        {
+            // handle extra paths
+
+            let (extra32, extra64, mut errs) = process_extra_manifests(extra_paths);
+            for path in extra32 {
+                manifests32.push_unique(path);
+            }
+            for path in extra64 {
+                manifests64.push_unique(path);
+            }
+            nonfatal_errors.append(&mut errs);
+        }
 
         let manifest_32_by_parent_dir: HashMap<&Path, &Path, RandomState> = HashMap::from_iter(
             manifests32
@@ -351,29 +389,28 @@ impl Platform for WindowsPlatform {
                 .filter_map(|p| p.parent().map(|parent| (parent, p.as_path()))),
         );
 
+        let mut push_err = |e: Error, path: &Path| {
+            eprintln!(
+                "Error creating runtime object for runtime with manifest {}: {}",
+                path.display(),
+                e
+            );
+            nonfatal_errors.push(ManifestError(path.to_owned(), e));
+        };
+
         // Handle all 64-bit runtimes, matching with a 32-bit one if applicable
         for path in manifests64.iter() {
             let parent = path.parent().expect("every file has a parent");
             let counterpart_32 = manifest_32_by_parent_dir.get(parent);
             if let Err(e) = collection.try_add(Some(path), counterpart_32.map(|p| p.as_ref())) {
-                eprintln!(
-                    "Error creating runtime object for runtime with manifest {}: {}",
-                    path.display(),
-                    e
-                );
-                nonfatal_errors.push(ManifestError(path.to_owned(), e));
+                push_err(e, &path);
             }
         }
         // Handle remaining 32-bit ones
         for path in manifests32.iter() {
             // we don't care about errors right now
             if let Err(e) = collection.try_add(None, Some(path)) {
-                eprintln!(
-                    "Error creating runtime object for runtime with manifest {}: {}",
-                    path.display(),
-                    e
-                );
-                nonfatal_errors.push(ManifestError(path.to_owned(), e));
+                push_err(e, &path);
             }
         }
 

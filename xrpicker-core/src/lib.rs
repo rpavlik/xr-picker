@@ -8,11 +8,12 @@ pub const ACTIVE_RUNTIME_FILENAME: &str = "active_runtime.json";
 pub const OPENXR: &str = "openxr";
 
 mod app_state;
+pub(crate) mod arch_detect;
 pub(crate) mod manifest;
 pub mod platform;
 pub(crate) mod runtime;
 
-pub use app_state::AppState;
+pub use app_state::{AppState, PersistentAppState};
 
 use std::{fmt::Display, io, path::PathBuf};
 
@@ -34,6 +35,9 @@ pub enum Error {
 
     #[error("Error when trying to set active runtime: {0}")]
     SetActiveError(String),
+
+    #[error("Error when trying to load the runtime binary {0} to guess its architecture")]
+    RuntimeBinaryLoadError(String),
 }
 
 #[derive(Debug)]
