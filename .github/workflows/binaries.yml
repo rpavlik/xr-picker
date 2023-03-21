@@ -25,7 +25,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: linux-build
-          path: target/release/xrpicker-egui
+          path: target/release/xrpicker-gui
 
   build-win:
     runs-on: windows-latest
@@ -38,4 +38,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: windows-build
-          path: target/release/xrpicker-egui.exe
+          path: target/release/xrpicker-gui.exe
