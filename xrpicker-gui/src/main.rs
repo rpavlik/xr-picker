@@ -94,7 +94,7 @@ impl<T: Platform> GuiView<T> for Error {
             .inner;
 
         if repopulate {
-            return AppState::new_with_persistent_state(platform, &persistent_state);
+            return AppState::new_with_persistent_state(platform, persistent_state);
         }
         Err(self)
     }
