@@ -10,8 +10,8 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-eframe = {version = "0.19", features = ["persistence"]}
-egui-winit = "0.19"
+eframe = {version = "0.21", features = ["persistence"]}
+egui-winit = "0.21"
 image = "0.24"
 itertools = "0.10"
 xrpicker = {path = "../xrpicker-core"}
