@@ -6,6 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 -->
 
 [![REUSE status](https://api.reuse.software/badge/github.com/rpavlik/xr-picker)](https://api.reuse.software/info/github.com/rpavlik/xr-picker)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 This is a cross-platform tool to allow you to easily change your active OpenXR
 runtime. (It also serves as a bit of a testbed for Rust GUI techniques, though I
@@ -30,12 +31,16 @@ Features include:
 
 ## Development and Contribution
 
-Contributions are gladly accepted. CI enforces
-[REUSE](https://reuse.software/), [cargo-deny][], and simple build tests on
-Linux and Windows. It is a bit hard to test even the core library because it
-works with registry keys and the file system, and I have not yet investigated
-how to mock these cleanly in Rust for automated testing.
+We welcome community contributions to this project. We have a
+[Code of Conduct](CODE_OF_CONDUCT.md); by participating in this project you
+agree to its terms.
 
+CI enforces [REUSE][], [cargo-deny][], and simple build tests on Linux and
+Windows. It is a bit hard to test even the core library because it works with
+registry keys and the file system, and I have not yet investigated how to mock
+these cleanly in Rust for automated testing.
+
+[REUSE]: https://reuse.software/
 [cargo-deny]: https://embarkstudios.github.io/cargo-deny/
 
 ## License
