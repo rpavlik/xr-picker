@@ -4,11 +4,23 @@
 [cargo-vet]
 version = "0.5"
 
+[imports.bytecode-alliance]
+url = "https://raw.githubusercontent.com/bytecodealliance/wasmtime/main/supply-chain/audits.toml"
+
 [imports.chromeos]
 url = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/main/cargo-vet/audits.toml?format=TEXT"
 
+[imports.embark-studios]
+url = "https://raw.githubusercontent.com/EmbarkStudios/rust-ecosystem/main/audits.toml"
+
+[imports.isrg]
+url = "https://raw.githubusercontent.com/divviup/libprio-rs/main/supply-chain/audits.toml"
+
 [imports.mozilla]
 url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
+
+[imports.zcash]
+url = "https://raw.githubusercontent.com/zcash/rust-ecosystem/main/supply-chain/audits.toml"
 
 [[exemptions.ab_glyph]]
 version = "0.2.20"
@@ -68,10 +80,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.arrayref]]
 version = "0.3.7"
-criteria = "safe-to-deploy"
-
-[[exemptions.arrayvec]]
-version = "0.7.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.async-broadcast]]
@@ -138,10 +146,6 @@ criteria = "safe-to-deploy"
 version = "0.1.6"
 criteria = "safe-to-deploy"
 
-[[exemptions.block-buffer]]
-version = "0.10.4"
-criteria = "safe-to-deploy"
-
 [[exemptions.block-sys]]
 version = "0.1.0-beta.1"
 criteria = "safe-to-deploy"
@@ -152,10 +156,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.blocking]]
 version = "1.3.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.bumpalo]]
-version = "3.12.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.bytemuck]]
@@ -192,10 +192,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.cfg-expr]]
 version = "0.11.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.cfg-if]]
-version = "1.0.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.cfg_aliases]]
@@ -248,10 +244,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.crossbeam-utils]]
 version = "0.8.15"
-criteria = "safe-to-deploy"
-
-[[exemptions.crypto-common]]
-version = "0.1.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.derivative]]
@@ -358,10 +350,6 @@ criteria = "safe-to-deploy"
 version = "0.1.1"
 criteria = "safe-to-deploy"
 
-[[exemptions.form_urlencoded]]
-version = "1.1.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.futures-core]]
 version = "0.3.27"
 criteria = "safe-to-deploy"
@@ -450,16 +438,8 @@ criteria = "safe-to-deploy"
 version = "0.16.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.heck]]
-version = "0.4.1"
-criteria = "safe-to-deploy"
-
 [[exemptions.hermit-abi]]
 version = "0.3.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.idna]]
-version = "0.3.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.image]]
@@ -562,10 +542,6 @@ criteria = "safe-to-deploy"
 version = "0.7.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.ndk-context]]
-version = "0.1.1"
-criteria = "safe-to-deploy"
-
 [[exemptions.ndk-sys]]
 version = "0.4.1+23.1.7779620"
 criteria = "safe-to-deploy"
@@ -580,10 +556,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.nix]]
 version = "0.26.2"
-criteria = "safe-to-deploy"
-
-[[exemptions.nohash-hasher]]
-version = "0.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.nom]]
@@ -660,10 +632,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.paste]]
 version = "1.0.12"
-criteria = "safe-to-deploy"
-
-[[exemptions.percent-encoding]]
-version = "2.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.pin-project-lite]]
@@ -838,10 +806,6 @@ criteria = "safe-to-deploy"
 version = "0.1.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.strum]]
-version = "0.24.1"
-criteria = "safe-to-deploy"
-
 [[exemptions.strum_macros]]
 version = "0.24.3"
 criteria = "safe-to-deploy"
@@ -876,14 +840,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.tiny-skia-path]]
 version = "0.8.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.tinyvec]]
-version = "1.6.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.tinyvec_macros]]
-version = "0.1.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.toml]]
@@ -926,18 +882,6 @@ criteria = "safe-to-deploy"
 version = "0.3.13"
 criteria = "safe-to-deploy"
 
-[[exemptions.unicode-ident]]
-version = "1.0.8"
-criteria = "safe-to-deploy"
-
-[[exemptions.unicode-normalization]]
-version = "0.1.22"
-criteria = "safe-to-deploy"
-
-[[exemptions.url]]
-version = "2.3.1"
-criteria = "safe-to-deploy"
-
 [[exemptions.vec_map]]
 version = "0.8.2"
 criteria = "safe-to-deploy"
@@ -975,10 +919,6 @@ version = "0.2.84"
 criteria = "safe-to-deploy"
 
 [[exemptions.wasm-bindgen-macro-support]]
-version = "0.2.84"
-criteria = "safe-to-deploy"
-
-[[exemptions.wasm-bindgen-shared]]
 version = "0.2.84"
 criteria = "safe-to-deploy"
 
@@ -1060,14 +1000,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.windows-sys]]
 version = "0.36.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.windows-sys]]
-version = "0.42.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.windows-sys]]
-version = "0.45.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.windows-targets]]

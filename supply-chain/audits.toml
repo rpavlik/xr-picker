@@ -1,4 +1,14 @@
 
 # cargo-vet audits file
 
-[audits]
+[[audits.block-buffer]]
+who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
+criteria = "safe-to-deploy"
+delta = "0.10.3 -> 0.10.4"
+notes = "Fixes a soundness error."
+
+[[audits.unicode-ident]]
+who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.6 -> 1.0.8"
+notes = "Changes only affect documentation."
