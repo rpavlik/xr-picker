@@ -145,9 +145,9 @@ impl<T: Platform> EguiAppState<T> for AppState<T> {
                     .show(ui, |ui| -> Result<bool, Error> {
                         let mut repopulate = false;
                         ui.label(""); // for button
-                        ui.label("Runtime Name");
-                        ui.label("State");
-                        ui.label("Details");
+                        ui.label(egui::RichText::new("Runtime Name").size(TABLE_HEADER_TEXT_SIZE));
+                        ui.label(egui::RichText::new("State").size(TABLE_HEADER_TEXT_SIZE));
+                        ui.label(egui::RichText::new("Details").size(TABLE_HEADER_TEXT_SIZE));
                         ui.end_row();
 
                         for runtime in &self.runtimes {
@@ -320,6 +320,7 @@ impl<T: Platform> GuiView<T> for Result<AppState<T>, Error> {
 }
 
 const HEADING_TEXT_SIZE: f32 = 24.0;
+const TABLE_HEADER_TEXT_SIZE: f32 = 18.0;
 const BODY_TEXT_SIZE: f32 = 14.0;
 
 /// Fix visual style for increase readability
