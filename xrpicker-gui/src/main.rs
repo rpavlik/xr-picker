@@ -205,13 +205,25 @@ fn header_with_browse_and_refresh_button(ctx: &egui::Context) -> HeaderAction {
                 ui.heading("OpenXR Runtime Picker");
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("Refresh").clicked() {
+                    if ui
+                        .button("🔃")
+                        .on_hover_text("Refresh runtime list")
+                        .clicked()
+                    {
                         return HeaderAction::Refresh;
                     }
-                    if ui.button("Browse for manifest").clicked() {
+                    if ui
+                        .button("🗁")
+                        .on_hover_text("Browse for manifest")
+                        .clicked()
+                    {
                         return HeaderAction::Browse;
                     }
-                    if ui.button("Forget extra manifests").clicked() {
+                    if ui
+                        .button("⊗")
+                        .on_hover_text("Forget extra manifests")
+                        .clicked()
+                    {
                         return HeaderAction::Forget;
                     }
                     HeaderAction::Nothing
