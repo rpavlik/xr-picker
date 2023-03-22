@@ -13,6 +13,7 @@ mod app_state;
 #[cfg(windows)]
 pub(crate) mod arch_detect;
 pub(crate) mod manifest;
+pub(crate) mod path_simplifier;
 pub mod platform;
 pub(crate) mod runtime;
 
