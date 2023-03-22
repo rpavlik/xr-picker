@@ -4,7 +4,7 @@
 use xdg::{BaseDirectories, BaseDirectoriesError};
 
 use crate::{
-    manifest::GenericManifest,
+    manifest::{GenericManifest, FILE_INDIRECTION_ARROW},
     path_simplifier::PathSimplifier,
     platform::{Platform, PlatformRuntime},
     runtime::BaseRuntime,
@@ -106,8 +106,9 @@ impl PlatformRuntime for LinuxRuntime {
         let description = self.base.describe_manifest(self.base.get_manifest_path());
         if self.orig_path != self.base.get_manifest_path() {
             format!(
-                "{} ➡ {}",
+                "{}{}{}",
                 PathSimplifier::new().simplify(&self.orig_path).display(),
+                FILE_INDIRECTION_ARROW,
                 description
             )
         } else {

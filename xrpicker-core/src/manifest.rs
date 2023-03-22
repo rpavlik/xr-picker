@@ -7,6 +7,10 @@ use serde::Deserialize;
 
 use crate::path_simplifier::PathSimplifier;
 
+// The string to put between two file names/paths to indicate that one points to another,
+// when used in a *multiline-capable* GUI field.
+pub(crate) const FILE_INDIRECTION_ARROW: &str = "\n    ⮩ ";
+
 pub(crate) trait GenericManifest {
     /// Get the library path as stored in the manifest
     fn library_path(&self) -> &str;
@@ -35,19 +39,26 @@ pub(crate) trait GenericManifest {
         let manifest = manifest_path.display();
         if self.uses_search_path() {
             format!(
-                "{} ➡ {} in the dynamic library search path",
+                "{}{}{} in the dynamic library search path",
                 manifest,
+                FILE_INDIRECTION_ARROW,
                 self.library_path()
             )
         } else if self.library_relative_to_manifest() {
             format!(
-                "{} ➡ {} relative to the manifest",
+                "{}{}{} relative to the manifest",
                 manifest,
+                FILE_INDIRECTION_ARROW,
                 self.library_path()
             )
         } else {
             let lib_path = Path::new(self.library_path());
-            format!("{} ➡ {}", manifest, simplifier.simplify(lib_path).display())
+            format!(
+                "{}{}{}",
+                manifest,
+                FILE_INDIRECTION_ARROW,
+                simplifier.simplify(lib_path).display()
+            )
         }
     }
 }
