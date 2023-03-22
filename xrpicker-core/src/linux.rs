@@ -4,7 +4,8 @@
 use xdg::{BaseDirectories, BaseDirectoriesError};
 
 use crate::{
-    manifest::GenericManifest,
+    manifest::{GenericManifest, FILE_INDIRECTION_ARROW},
+    path_simplifier::PathSimplifier,
     platform::{Platform, PlatformRuntime},
     runtime::BaseRuntime,
     ActiveState, Error, ManifestError, ACTIVE_RUNTIME_FILENAME, OPENXR, OPENXR_MAJOR_VERSION,
@@ -104,7 +105,12 @@ impl PlatformRuntime for LinuxRuntime {
     fn describe(&self) -> String {
         let description = self.base.describe_manifest(self.base.get_manifest_path());
         if self.orig_path != self.base.get_manifest_path() {
-            format!("{} -> {}", self.orig_path.display(), description)
+            format!(
+                "{}{}{}",
+                PathSimplifier::new().simplify(&self.orig_path).display(),
+                FILE_INDIRECTION_ARROW,
+                description
+            )
         } else {
             description
         }

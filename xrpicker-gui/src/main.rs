@@ -6,7 +6,10 @@
 
 use std::path::PathBuf;
 
-use eframe::egui;
+use eframe::{
+    egui::{self, TextStyle},
+    epaint::Color32,
+};
 
 use itertools::Itertools;
 use xrpicker::{
@@ -32,6 +35,7 @@ struct PickerApp<T: Platform> {
     platform: T,
     state: Option<Result<AppState<T>, Error>>,
     persistent_state: PersistentAppState,
+    fixed_theme: bool,
 }
 
 impl<T: Platform> PickerApp<T> {
@@ -49,6 +53,7 @@ impl<T: Platform> PickerApp<T> {
             platform,
             state,
             persistent_state,
+            fixed_theme: false,
         }
     }
 
@@ -59,12 +64,15 @@ impl<T: Platform> PickerApp<T> {
 
 const PROJECT_URL: &str = "https://github.com/rpavlik/xr-picker";
 
+const TRADEMARK_NOTICE: &str ="OpenXR™ and the OpenXR logo are trademarks owned by The Khronos Group Inc. and are registered as a trademark in China, the European Union, Japan, and the United Kingdom.";
+
 fn add_about_contents(ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.label("This is an open-source software project, maintained at");
         ui.hyperlink(PROJECT_URL);
         ui.label(". You are welcome and encouraged to participate in development.");
     });
+    ui.label(egui::RichText::new(TRADEMARK_NOTICE).small());
 }
 
 /// Trait implemented for all states of the GUI.
@@ -130,39 +138,43 @@ impl<T: Platform> EguiAppState<T> for AppState<T> {
 
     fn add_runtime_grid(&self, platform: &T, ui: &mut egui::Ui) -> Result<bool, Error> {
         // The closure this calls returns true if we should refresh the list
-        egui::Grid::new("runtimes")
-            .striped(true)
-            .min_col_width(ui.spacing().interact_size.x * 2.0) // widen to avoid resizing based on default runtime
-            .min_row_height(ui.spacing().interact_size.y * 2.5)
-            .num_columns(4)
-            .show(ui, |ui| -> Result<bool, Error> {
-                let mut repopulate = false;
-                ui.label(""); // for button
-                ui.label("Runtime Name");
-                ui.label("State");
-                ui.label("Details");
-                ui.end_row();
+        egui::containers::ScrollArea::horizontal()
+            .show(ui, |ui| {
+                egui::Grid::new("runtimes")
+                    .striped(true)
+                    .min_col_width(ui.spacing().interact_size.x * 2.0) // widen to avoid resizing based on default runtime
+                    .min_row_height(ui.spacing().interact_size.y * 2.5)
+                    .num_columns(4)
+                    .show(ui, |ui| -> Result<bool, Error> {
+                        let mut repopulate = false;
+                        ui.label(""); // for button
+                        ui.label(egui::RichText::new("Runtime Name").size(TABLE_HEADER_TEXT_SIZE));
+                        ui.label(egui::RichText::new("State").size(TABLE_HEADER_TEXT_SIZE));
+                        ui.label(egui::RichText::new("Details").size(TABLE_HEADER_TEXT_SIZE));
+                        ui.end_row();
 
-                for runtime in &self.runtimes {
-                    let runtime_active_state =
-                        platform.get_runtime_active_state(runtime, &self.active_data);
-                    if runtime_active_state.should_provide_make_active_button() {
-                        if ui.button("Make active").clicked() {
-                            if let Err(e) = runtime.make_active() {
-                                eprintln!("error in make_active: {:?}", e);
-                                return Err(e);
+                        for runtime in &self.runtimes {
+                            let runtime_active_state =
+                                platform.get_runtime_active_state(runtime, &self.active_data);
+                            if runtime_active_state.should_provide_make_active_button() {
+                                if ui.button("Make active").clicked() {
+                                    if let Err(e) = runtime.make_active() {
+                                        eprintln!("error in make_active: {:?}", e);
+                                        return Err(e);
+                                    }
+                                    repopulate = true;
+                                }
+                            } else {
+                                ui.label("");
                             }
-                            repopulate = true;
+                            ui.label(runtime.get_runtime_name());
+                            ui.label(format!("{}", runtime_active_state));
+                            ui.label(runtime.describe());
+                            ui.end_row();
                         }
-                    } else {
-                        ui.label("");
-                    }
-                    ui.label(runtime.get_runtime_name());
-                    ui.label(format!("{}", runtime_active_state));
-                    ui.label(runtime.describe());
-                    ui.end_row();
-                }
-                Ok(repopulate)
+                        Ok(repopulate)
+                    })
+                    .inner
             })
             .inner
     }
@@ -202,16 +214,28 @@ fn header_with_browse_and_refresh_button(ctx: &egui::Context) -> HeaderAction {
     egui::TopBottomPanel::top("header")
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.heading("OpenXR Runtime Picker");
+                ui.heading("XR Runtime Picker for OpenXR™");
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("Refresh").clicked() {
+                    if ui
+                        .button("🔃")
+                        .on_hover_text("Refresh runtime list")
+                        .clicked()
+                    {
                         return HeaderAction::Refresh;
                     }
-                    if ui.button("Browse for manifest").clicked() {
+                    if ui
+                        .button("🗁")
+                        .on_hover_text("Browse for manifest")
+                        .clicked()
+                    {
                         return HeaderAction::Browse;
                     }
-                    if ui.button("Forget extra manifests").clicked() {
+                    if ui
+                        .button("⊗")
+                        .on_hover_text("Forget extra manifests")
+                        .clicked()
+                    {
                         return HeaderAction::Forget;
                     }
                     HeaderAction::Nothing
@@ -298,8 +322,38 @@ impl<T: Platform> GuiView<T> for Result<AppState<T>, Error> {
     }
 }
 
+const HEADING_TEXT_SIZE: f32 = 24.0;
+const TABLE_HEADER_TEXT_SIZE: f32 = 18.0;
+const BODY_TEXT_SIZE: f32 = 14.0;
+
+/// Fix visual style for increase readability
+fn update_theme(ctx: &egui::Context) {
+    let mut visuals = egui::Visuals::dark().clone();
+    // Increase contrast
+    visuals.override_text_color = Some(Color32::LIGHT_GRAY);
+    ctx.set_visuals(visuals);
+
+    let mut style = (*ctx.style()).clone();
+    // Increase body font size
+    style
+        .text_styles
+        .entry(TextStyle::Body)
+        .and_modify(|e| e.size = BODY_TEXT_SIZE);
+    // Increase heading text size too
+    style
+        .text_styles
+        .entry(TextStyle::Heading)
+        .and_modify(|e| e.size = HEADING_TEXT_SIZE);
+    ctx.set_style(style);
+}
+
 impl<T: Platform> eframe::App for PickerApp<T> {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        if !self.fixed_theme {
+            update_theme(ctx);
+            self.fixed_theme = true;
+        }
+
         if let Some(state_or_error) = self.state.take() {
             let new_state = state_or_error.update(&self.platform, ctx, &mut self.persistent_state);
             self.state.replace(new_state);
@@ -326,7 +380,7 @@ fn main() -> eframe::Result<()> {
         ..Default::default()
     };
     eframe::run_native(
-        "OpenXR Runtime Picker",
+        "XR Runtime Picker for OpenXR",
         options,
         Box::new(|cc| Box::new(PickerApp::new(make_platform(), cc))),
     )
