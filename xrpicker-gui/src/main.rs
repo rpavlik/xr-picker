@@ -16,8 +16,8 @@ use xrpicker::{
     make_platform, platform::PlatformRuntime, AppState, Error, PersistentAppState, Platform,
 };
 
-// const ICON_32: &[u8; 542] = include_bytes!("../../assets/icon/icon32.png");
-const ICON_48: &[u8; 727] = include_bytes!("../../assets/icon/icon48.png");
+// const ICON_32: &[u8; 542] = include_bytes!("../assets/icon/icon32.png");
+const ICON_48: &[u8; 727] = include_bytes!("../assets/icon/icon48.png");
 
 fn load_icon(icon_data: &[u8]) -> Option<eframe::IconData> {
     let image = image::load_from_memory_with_format(icon_data, image::ImageFormat::Png).ok()?;
