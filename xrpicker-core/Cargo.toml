@@ -1,11 +1,15 @@
-# SPDX-FileCopyrightText: 2022, Collabora, Ltd.
+# SPDX-FileCopyrightText: 2022-2023, Collabora, Ltd.
 # SPDX-License-Identifier: CC0-1.0
 
 [package]
+authors = ["Ryan Pavlik <ryan.pavlik@collabora.com>"]
+categories = ["config"]
+description = "Core functionality of enumerating OpenXR runtimes, identifying the active runtime, and updating the active runtime"
 edition = "2021"
 homepage = "https://github.com/rpavlik/xr-picker"
 license = "MIT OR Apache-2.0"
 name = "xrpicker"
+repository = "https://github.com/rpavlik/xr-picker"
 version = "2.0.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
