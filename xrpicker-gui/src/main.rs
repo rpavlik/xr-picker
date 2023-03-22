@@ -6,7 +6,10 @@
 
 use std::path::PathBuf;
 
-use eframe::egui;
+use eframe::{
+    egui::{self, TextStyle},
+    epaint::Color32,
+};
 
 use itertools::Itertools;
 use xrpicker::{
@@ -32,6 +35,7 @@ struct PickerApp<T: Platform> {
     platform: T,
     state: Option<Result<AppState<T>, Error>>,
     persistent_state: PersistentAppState,
+    fixed_theme: bool,
 }
 
 impl<T: Platform> PickerApp<T> {
@@ -49,6 +53,7 @@ impl<T: Platform> PickerApp<T> {
             platform,
             state,
             persistent_state,
+            fixed_theme: false,
         }
     }
 
@@ -314,8 +319,37 @@ impl<T: Platform> GuiView<T> for Result<AppState<T>, Error> {
     }
 }
 
+const HEADING_TEXT_SIZE: f32 = 24.0;
+const BODY_TEXT_SIZE: f32 = 14.0;
+
+/// Fix visual style for increase readability
+fn update_theme(ctx: &egui::Context) {
+    let mut visuals = egui::Visuals::dark().clone();
+    // Increase contrast
+    visuals.override_text_color = Some(Color32::LIGHT_GRAY);
+    ctx.set_visuals(visuals);
+
+    let mut style = (*ctx.style()).clone();
+    // Increase body font size
+    style
+        .text_styles
+        .entry(TextStyle::Body)
+        .and_modify(|e| e.size = BODY_TEXT_SIZE);
+    // Increase heading text size too
+    style
+        .text_styles
+        .entry(TextStyle::Heading)
+        .and_modify(|e| e.size = HEADING_TEXT_SIZE);
+    ctx.set_style(style);
+}
+
 impl<T: Platform> eframe::App for PickerApp<T> {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        if !self.fixed_theme {
+            update_theme(ctx);
+            self.fixed_theme = true;
+        }
+
         if let Some(state_or_error) = self.state.take() {
             let new_state = state_or_error.update(&self.platform, ctx, &mut self.persistent_state);
             self.state.replace(new_state);
