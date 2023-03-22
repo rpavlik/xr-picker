@@ -64,12 +64,15 @@ impl<T: Platform> PickerApp<T> {
 
 const PROJECT_URL: &str = "https://github.com/rpavlik/xr-picker";
 
+const TRADEMARK_NOTICE: &str ="OpenXR™ and the OpenXR logo are trademarks owned by The Khronos Group Inc. and are registered as a trademark in China, the European Union, Japan, and the United Kingdom.";
+
 fn add_about_contents(ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.label("This is an open-source software project, maintained at");
         ui.hyperlink(PROJECT_URL);
         ui.label(". You are welcome and encouraged to participate in development.");
     });
+    ui.label(egui::RichText::new(TRADEMARK_NOTICE).small());
 }
 
 /// Trait implemented for all states of the GUI.
@@ -211,7 +214,7 @@ fn header_with_browse_and_refresh_button(ctx: &egui::Context) -> HeaderAction {
     egui::TopBottomPanel::top("header")
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.heading("OpenXR Runtime Picker");
+                ui.heading("XR Runtime Picker for OpenXR™");
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui
@@ -377,7 +380,7 @@ fn main() -> eframe::Result<()> {
         ..Default::default()
     };
     eframe::run_native(
-        "OpenXR Runtime Picker",
+        "XR Runtime Picker for OpenXR",
         options,
         Box::new(|cc| Box::new(PickerApp::new(make_platform(), cc))),
     )
