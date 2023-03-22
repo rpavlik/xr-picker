@@ -2,10 +2,14 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [package]
-description = "Choose your active OpenXR runtime"
+authors = ["Ryan Pavlik <ryan.pavlik@collabora.com>"]
+description = "Choose your active OpenXR runtime in a friendly graphical interface"
 edition = "2021"
+homepage = "https://github.com/rpavlik/xr-picker"
 license = "MIT OR Apache-2.0"
 name = "xrpicker-gui"
+readme = "../README.md"
+repository = "https://github.com/rpavlik/xr-picker"
 version = "2.0.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
