@@ -4,8 +4,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 #![forbid(unsafe_code)]
 
+use std::path::PathBuf;
+
 use eframe::egui;
-use image;
 
 use itertools::Itertools;
 use xrpicker::{
@@ -167,11 +168,32 @@ impl<T: Platform> EguiAppState<T> for AppState<T> {
     }
 }
 
+/// The app-wide action to take, based on the options in the header.
 #[derive(Debug, PartialEq, Eq)]
 enum HeaderAction {
+    /// Do nothing special, just display.
     Nothing,
-    ShouldRefresh,
-    ShouldBrowse,
+    /// Refresh the runtime list.
+    Refresh,
+    /// Browse for an extra manifest to add
+    Browse,
+    /// Forget the extra manifests we added
+    Forget,
+}
+
+impl HeaderAction {
+    /// Does this header action imply the need to refresh the runtime list?
+    fn should_refresh(&self, new_extra_paths: &Vec<PathBuf>) -> bool {
+        if !new_extra_paths.is_empty() {
+            return true;
+        }
+        match self {
+            HeaderAction::Nothing => false,
+            HeaderAction::Refresh => true,
+            HeaderAction::Browse => false, // if we browsed successfully we would have a new path above
+            HeaderAction::Forget => true,
+        }
+    }
 }
 
 /// Creates a top panel with a header and a refresh button.
@@ -184,10 +206,13 @@ fn header_with_browse_and_refresh_button(ctx: &egui::Context) -> HeaderAction {
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui.button("Refresh").clicked() {
-                        return HeaderAction::ShouldRefresh;
+                        return HeaderAction::Refresh;
                     }
                     if ui.button("Browse for manifest").clicked() {
-                        return HeaderAction::ShouldBrowse;
+                        return HeaderAction::Browse;
+                    }
+                    if ui.button("Forget extra manifests").clicked() {
+                        return HeaderAction::Forget;
                     }
                     HeaderAction::Nothing
                 })
@@ -200,7 +225,7 @@ fn header_with_browse_and_refresh_button(ctx: &egui::Context) -> HeaderAction {
 
 impl<T: Platform> GuiView<T> for AppState<T> {
     fn update(
-        self,
+        mut self,
         platform: &T,
         ctx: &egui::Context,
         persistent_state: &mut PersistentAppState,
@@ -216,11 +241,19 @@ impl<T: Platform> GuiView<T> for AppState<T> {
 
         let mut new_extra_paths = vec![];
 
-        // handle browse button
-        if header_action == HeaderAction::ShouldBrowse {
-            if let Some(p) = rfd::FileDialog::new().pick_file() {
-                println!("Got a new path from file dialog: {}", p.display());
-                new_extra_paths.push(p);
+        match header_action {
+            HeaderAction::Nothing => {}
+            HeaderAction::Refresh => {}
+            HeaderAction::Browse => {
+                if let Some(p) = rfd::FileDialog::new().pick_file() {
+                    println!("Got a new path from file dialog: {}", p.display());
+                    new_extra_paths.push(p);
+                }
+            }
+            HeaderAction::Forget => {
+                persistent_state.extra_paths.clear();
+                // Must also clear runtimes because extra manifests that exist and are valid will show up here.
+                self.runtimes.clear();
             }
         }
 
@@ -236,15 +269,14 @@ impl<T: Platform> GuiView<T> for AppState<T> {
             }
         });
 
-        let should_refresh: bool =
-            header_action == HeaderAction::ShouldRefresh || !new_extra_paths.is_empty();
-
         // Central panel must come last
-        let should_refresh = should_refresh
+        let should_refresh = header_action.should_refresh(&new_extra_paths)
             || egui::CentralPanel::default()
                 .show(ctx, |ui| self.add_runtime_grid(platform, ui))
                 .inner?; // get at the nested closure's return value (whether to repopulate), after handling errors.
+
         persistent_state.append_new_extra_paths(new_extra_paths);
+
         if should_refresh {
             return self.refresh(platform, Some(persistent_state));
         }
