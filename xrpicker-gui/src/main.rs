@@ -130,39 +130,43 @@ impl<T: Platform> EguiAppState<T> for AppState<T> {
 
     fn add_runtime_grid(&self, platform: &T, ui: &mut egui::Ui) -> Result<bool, Error> {
         // The closure this calls returns true if we should refresh the list
-        egui::Grid::new("runtimes")
-            .striped(true)
-            .min_col_width(ui.spacing().interact_size.x * 2.0) // widen to avoid resizing based on default runtime
-            .min_row_height(ui.spacing().interact_size.y * 2.5)
-            .num_columns(4)
-            .show(ui, |ui| -> Result<bool, Error> {
-                let mut repopulate = false;
-                ui.label(""); // for button
-                ui.label("Runtime Name");
-                ui.label("State");
-                ui.label("Details");
-                ui.end_row();
+        egui::containers::ScrollArea::horizontal()
+            .show(ui, |ui| {
+                egui::Grid::new("runtimes")
+                    .striped(true)
+                    .min_col_width(ui.spacing().interact_size.x * 2.0) // widen to avoid resizing based on default runtime
+                    .min_row_height(ui.spacing().interact_size.y * 2.5)
+                    .num_columns(4)
+                    .show(ui, |ui| -> Result<bool, Error> {
+                        let mut repopulate = false;
+                        ui.label(""); // for button
+                        ui.label("Runtime Name");
+                        ui.label("State");
+                        ui.label("Details");
+                        ui.end_row();
 
-                for runtime in &self.runtimes {
-                    let runtime_active_state =
-                        platform.get_runtime_active_state(runtime, &self.active_data);
-                    if runtime_active_state.should_provide_make_active_button() {
-                        if ui.button("Make active").clicked() {
-                            if let Err(e) = runtime.make_active() {
-                                eprintln!("error in make_active: {:?}", e);
-                                return Err(e);
+                        for runtime in &self.runtimes {
+                            let runtime_active_state =
+                                platform.get_runtime_active_state(runtime, &self.active_data);
+                            if runtime_active_state.should_provide_make_active_button() {
+                                if ui.button("Make active").clicked() {
+                                    if let Err(e) = runtime.make_active() {
+                                        eprintln!("error in make_active: {:?}", e);
+                                        return Err(e);
+                                    }
+                                    repopulate = true;
+                                }
+                            } else {
+                                ui.label("");
                             }
-                            repopulate = true;
+                            ui.label(runtime.get_runtime_name());
+                            ui.label(format!("{}", runtime_active_state));
+                            ui.label(runtime.describe());
+                            ui.end_row();
                         }
-                    } else {
-                        ui.label("");
-                    }
-                    ui.label(runtime.get_runtime_name());
-                    ui.label(format!("{}", runtime_active_state));
-                    ui.label(runtime.describe());
-                    ui.end_row();
-                }
-                Ok(repopulate)
+                        Ok(repopulate)
+                    })
+                    .inner
             })
             .inner
     }
