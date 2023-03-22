@@ -5,6 +5,8 @@ use std::path::Path;
 
 use serde::Deserialize;
 
+use crate::path_simplifier::PathSimplifier;
+
 pub(crate) trait GenericManifest {
     /// Get the library path as stored in the manifest
     fn library_path(&self) -> &str;
@@ -28,21 +30,24 @@ pub(crate) trait GenericManifest {
 
     /// Describe this manifest by using the manifest path and library path
     fn describe_manifest(&self, manifest_path: &Path) -> String {
+        let simplifier = PathSimplifier::new();
+        let manifest_path = simplifier.simplify(manifest_path);
         let manifest = manifest_path.display();
         if self.uses_search_path() {
             format!(
-                "{} -> {} in the dynamic library search path",
+                "{} ➡ {} in the dynamic library search path",
                 manifest,
                 self.library_path()
             )
         } else if self.library_relative_to_manifest() {
             format!(
-                "{} -> {} relative to the manifest",
+                "{} ➡ {} relative to the manifest",
                 manifest,
                 self.library_path()
             )
         } else {
-            format!("{} -> {}", manifest, self.library_path())
+            let lib_path = Path::new(self.library_path());
+            format!("{} ➡ {}", manifest, simplifier.simplify(lib_path).display())
         }
     }
 }
