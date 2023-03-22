@@ -16,7 +16,7 @@ version = "2.0.0"
 
 [dependencies]
 eframe = {version = "0.21.3", features = ["persistence"]}
-egui-winit = {version = "0.21.1", default-features = false, features = ["wayland"]}
+egui-winit = {version = "0.21.1", default-features = false}
 image = {version = "0.24.5", default-features = false, features = ["png"]}
 itertools = "0.10.5"
 rfd = "0.11.2"
@@ -25,6 +25,10 @@ xrpicker = {path = "../xrpicker-core"}
 # To add icon to EXE
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"
+
+[target.'cfg(linux)'.dependencies]
+# Only need wayland support on linux
+egui-winit = {version = "0.21.1", default-features = false, features = ["wayland"]}
 
 [package.metadata.winres]
 LegalCopyright = "Copyright © 2022-2023, Collabora, Ltd."
