@@ -3,7 +3,7 @@ Upstream-Name: XR Picker
 Upstream-Contact: Ryan Pavlik <ryan.pavlik@collabora.com>
 Source: https://github.com/rpavlik/xr-picker
 
-Files: assets/icon/*
+Files: xrpicker-gui/assets/icon/*
 Copyright: 2022, Collabora, Ltd.
   2020, Google
 License: Apache-2.0

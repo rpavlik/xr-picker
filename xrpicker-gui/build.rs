@@ -10,9 +10,9 @@ fn main() -> io::Result<()> {
     #[cfg(windows)]
     {
         let mut res = WindowsResource::new();
-        res.set_icon("../assets/icon/icon48.ico")
-            .set_icon_with_id("../assets/icon/icon32.ico", "2")
-            .set_manifest_file("../assets/manifest.xml")
+        res.set_icon("assets/icon/icon48.ico")
+            .set_icon_with_id("assets/icon/icon32.ico", "2")
+            .set_manifest_file("assets/manifest.xml")
             .set_language(0x0409) // US English
             .compile()?;
     }
