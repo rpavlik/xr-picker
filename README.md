@@ -5,13 +5,14 @@ Copyright 2023, Collabora, Ltd.
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
+[![Crates.io](https://img.shields.io/crates/v/xrpicker-gui)](https://crates.io/crates/xrpicker-gui)
 [![unsafe forbidden](https://img.shields.io/badge/unsafe-forbidden-success.svg)](https://github.com/rust-secure-code/safety-dance/)
 [![REUSE status](https://api.reuse.software/badge/github.com/rpavlik/xr-picker)](https://api.reuse.software/info/github.com/rpavlik/xr-picker)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
-This is a cross-platform tool to allow you to easily change your active OpenXR
-runtime. (It also serves as a bit of a testbed for Rust GUI techniques, though I
-use it "in production".)
+This is a cross-platform tool to allow you to easily change your active
+[OpenXR](https://khronos.org/openxr) runtime. (It also serves as a bit of a
+testbed for Rust GUI techniques, though I use it "in production".)
 
 Features include:
 
@@ -29,6 +30,39 @@ Features include:
 - Setting the active runtime(s)
   - On Windows by setting the registry value/values
   - On Linux by setting a per-user symlink to the manifest.
+
+Maintained at <https://github.com/rpavlik/xr-picker>.
+
+## Installation and Use
+
+- People using Windows can download a prebuilt release binary from
+  [Releases][].
+- People using Linux can also try a prebuilt release binary from [Releases][]
+  (they should be fairly compatible, being built on Ubuntu 20.04), though you
+  might need to build it locally if you have issues.
+- On either platform, you can install from packaged source using Cargo, the Rust
+  package manager, by running `cargo install xrpicker-gui`.
+- If you have cloned the source, the normal Rust build and run process will work
+  (`cargo build`, `cargo test`, `cargo run --bin xrpicker-gui`, etc.)
+
+[Releases]: https://github.com/rpavlik/xr-picker/releases
+
+## Structure
+
+The tool is split into two Rust "crates":
+
+- [`xrpicker-core`](xrpicker-core/), aka
+  [`xrpicker` on crates.io](https://crates.io/crates/xrpicker), contains
+  utilities for finding and manipulating runtimes, as well as
+  framework-independent data structures intended for use in a GUI frontend.
+  - It includes a very minimal (for now) CLI tool that can only list the active
+    runtime and available runtimes: this will probably be upgraded eventually to
+    be able to set the active runtime, in part so that the Windows GUI build can
+    invoke it as administrator instead of having to run the whole GUI as
+    administrator.
+- [`xrpicker-gui`](xrpicker-gui/),
+  ([`xrpicker-gui` on crates.io](https://crates.io/crates/xrpicker-gui)) is a
+  cross-platform GUI frontend made using [egui](https://egui.rs).
 
 ## Development and Contribution
 
