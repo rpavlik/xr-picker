@@ -33,6 +33,8 @@ Features include:
 
 Maintained at <https://github.com/rpavlik/xr-picker>.
 
+![Screenshot of XR Picker (GUI) on Linux](images/xrpicker-linux-screenshot.png)
+
 ## Installation and Use
 
 - People using Windows can download a prebuilt release binary from
