@@ -328,7 +328,7 @@ const BODY_TEXT_SIZE: f32 = 14.0;
 
 /// Fix visual style for increase readability
 fn update_theme(ctx: &egui::Context) {
-    let mut visuals = egui::Visuals::dark().clone();
+    let mut visuals = egui::Visuals::dark();
     // Increase contrast
     visuals.override_text_color = Some(Color32::LIGHT_GRAY);
     ctx.set_visuals(visuals);
