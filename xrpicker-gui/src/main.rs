@@ -380,7 +380,6 @@ fn main() -> eframe::Result<()> {
             x: 1024.0,
             y: 256.0,
         }),
-        // icon_data: load_icon(ICON_32),
         ..Default::default()
     };
     eframe::run_native(
