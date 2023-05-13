@@ -70,8 +70,8 @@ fn add_about_contents(ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.label("This is an open-source software project, maintained at");
         ui.hyperlink(PROJECT_URL);
-        ui.label(". You are welcome and encouraged to participate in development.");
     });
+    ui.label("You are welcome and encouraged to participate in development.");
     ui.label(egui::RichText::new(TRADEMARK_NOTICE).small());
 }
 
