@@ -160,6 +160,21 @@ fn find_potential_manifests_sysconfdir(suffix: &Path) -> impl Iterator<Item = Pa
 
 pub struct LinuxActiveRuntimeData(Option<PathBuf>);
 
+impl LinuxActiveRuntimeData {
+    fn new() -> Self {
+        LinuxActiveRuntimeData(possible_active_runtimes().next())
+    }
+
+    fn check_runtime(&self, runtime: &LinuxRuntime) -> ActiveState {
+        if let Some(active_path) = &self.0 {
+            if active_path == runtime.base.get_manifest_path() {
+                return ActiveState::ActiveIndependentRuntime;
+            }
+        }
+        ActiveState::NotActive
+    }
+}
+
 fn possible_active_runtimes() -> impl Iterator<Item = PathBuf> {
     let suffix = make_path_suffix().join(ACTIVE_RUNTIME_FILENAME);
     let etc_iter = once(make_sysconfdir(&suffix));
@@ -180,21 +195,6 @@ fn possible_active_runtimes() -> impl Iterator<Item = PathBuf> {
                 .unwrap_or_default()
         })
         .filter_map(|p| p.canonicalize().ok())
-}
-
-impl LinuxActiveRuntimeData {
-    fn new() -> Self {
-        LinuxActiveRuntimeData(possible_active_runtimes().next())
-    }
-
-    fn check_runtime(&self, runtime: &LinuxRuntime) -> ActiveState {
-        if let Some(active_path) = &self.0 {
-            if active_path == runtime.base.get_manifest_path() {
-                return ActiveState::ActiveIndependentRuntime;
-            }
-        }
-        ActiveState::NotActive
-    }
 }
 
 impl Platform for LinuxPlatform {
