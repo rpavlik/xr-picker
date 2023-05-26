@@ -1,40 +1,40 @@
-# SPDX-FileCopyrightText: 2022, Collabora, Ltd.
+# SPDX-FileCopyrightText: 2022-2023, Collabora, Ltd.
 # SPDX-License-Identifier: CC0-1.0
 
 targets = [
-    { triple = "x86_64-unknown-linux-gnu" },
-    { triple = "x86_64-pc-windows-msvc" },
+  {triple = "x86_64-unknown-linux-gnu"},
+  {triple = "x86_64-pc-windows-msvc"},
 ]
 
 [advisories]
-ignore = [
-    "RUSTSEC-2022-0048", # xml-rs unmaintained, but only used by some deps for codegen, not on arbitrary input.
-]
-
+ignore = []
 
 [licenses]
 # The lint level for crates which do not have a detectable license
-unlicensed = "deny"
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "BSD-3-Clause",
+  "BSD-2-Clause",
+  "BSL-1.0",
+  "Zlib",
+  "ISC",
+  "OFL-1.1",
+]
+confidence-threshold = 0.93
 copyleft = "warn"
 default = "deny"
-confidence-threshold = 0.93
-allow = [
-    "MIT",
-    "Apache-2.0",
-    "BSD-3-Clause",
-    "BSD-2-Clause",
-    "BSL-1.0",
-    "Zlib",
-    "ISC",
-    "OFL-1.1",
-]
 exceptions = [
-    { allow = ["LicenseRef-UFL-1.0"], name = "epaint" }, # default font - in exception because not standard SPDX ID
-    { allow = ["Unicode-DFS-2016"], name = "unicode-ident" }, # Unicode data
+  {allow = ["LicenseRef-UFL-1.0"], name = "epaint"}, # default font - in exception because not standard SPDX ID
+  {allow = ["Unicode-DFS-2016"], name = "unicode-ident"}, # Unicode data
+  {allow = ["MPL-2.0"], name = "option-ext"}, # file level copyleft OK
+  {allow = ["Apache-2.0 WITH LLVM-exception"], name = "target-lexicon"},
 ]
+unlicensed = "deny"
 
 [bans]
-# Lint level for when multiple versions of the same crate are detected
-multiple-versions = "warn"
+# Lint level for when multiple versions of the same crate are detectedignore
+# Default is warn, but there are too many of thse right now
+multiple-versions = "allow"
 # Lint level for when a crate version requirement is `*`
-# wildcards = "warn"
+wildcards = "warn"
