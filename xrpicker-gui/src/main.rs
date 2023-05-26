@@ -377,7 +377,7 @@ fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         icon_data: load_icon(ICON_48),
         min_window_size: Some(Vec2 {
-            x: 1024.0,
+            x: 800.0,
             y: 256.0,
         }),
         ..Default::default()
