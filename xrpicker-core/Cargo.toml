@@ -10,7 +10,7 @@ homepage = "https://github.com/rpavlik/xr-picker"
 license = "MIT OR Apache-2.0"
 name = "xrpicker"
 repository = "https://github.com/rpavlik/xr-picker"
-version = "2.1.0"
+version = "2.2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

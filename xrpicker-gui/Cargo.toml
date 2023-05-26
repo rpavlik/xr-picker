@@ -10,7 +10,7 @@ license = "MIT OR Apache-2.0"
 name = "xrpicker-gui"
 readme = "../README.md"
 repository = "https://github.com/rpavlik/xr-picker"
-version = "2.1.0"
+version = "2.2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -20,7 +20,7 @@ egui-winit = {version = "0.22.0", default-features = false}
 image = {version = "0.24.5", default-features = false, features = ["png"]}
 itertools = "0.10.5"
 rfd = "0.11.2"
-xrpicker = {path = "../xrpicker-core", version = "2.1.0"}
+xrpicker = {path = "../xrpicker-core", version = "2.2.0"}
 
 # To add icon to EXE
 [target.'cfg(windows)'.build-dependencies]

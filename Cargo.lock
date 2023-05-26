@@ -3080,7 +3080,7 @@ checksum = "2d8f380ae16a37b30e6a2cf67040608071384b1450c189e61bea3ff57cde922d"
 
 [[package]]
 name = "xrpicker"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "dirs 5.0.1",
  "iswow64",
@@ -3096,7 +3096,7 @@ dependencies = [
 
 [[package]]
 name = "xrpicker-gui"
-version = "2.1.0"
+version = "2.2.0"
 dependencies = [
  "eframe",
  "egui-winit",
