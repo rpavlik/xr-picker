@@ -70,8 +70,8 @@ fn add_about_contents(ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.label("This is an open-source software project, maintained at");
         ui.hyperlink(PROJECT_URL);
-        ui.label(". You are welcome and encouraged to participate in development.");
     });
+    ui.label("You are welcome and encouraged to participate in development.");
     ui.label(egui::RichText::new(TRADEMARK_NOTICE).small());
 }
 
@@ -328,7 +328,7 @@ const BODY_TEXT_SIZE: f32 = 14.0;
 
 /// Fix visual style for increase readability
 fn update_theme(ctx: &egui::Context) {
-    let mut visuals = egui::Visuals::dark().clone();
+    let mut visuals = egui::Visuals::dark();
     // Increase contrast
     visuals.override_text_color = Some(Color32::LIGHT_GRAY);
     ctx.set_visuals(visuals);
@@ -380,7 +380,6 @@ fn main() -> eframe::Result<()> {
             x: 1024.0,
             y: 256.0,
         }),
-        // icon_data: load_icon(ICON_32),
         ..Default::default()
     };
     eframe::run_native(
