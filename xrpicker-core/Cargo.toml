@@ -28,4 +28,4 @@ xdg = "2.4"
 [target.'cfg(windows)'.dependencies]
 iswow64 = "0.1.0"
 special-folder = "0.2"
-winreg = "0.11.0"
+winreg = "0.50.0"
