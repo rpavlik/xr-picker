@@ -6,9 +6,8 @@ SPDX-License-Identifier: CC0-1.0
         -->
         <security>
             <requestedPrivileges>
-                <!-- requireAdministrator for setting active runtime -->
                 <!-- uiAccess false because this is not assistive tech driving other windows -->
-                <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
+                <requestedExecutionLevel level="asInvoker" uiAccess="false"/>
             </requestedPrivileges>
         </security>
     </trustInfo>
