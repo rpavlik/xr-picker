@@ -15,7 +15,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use winreg::{
-    enums::{HKEY_LOCAL_MACHINE, KEY_QUERY_VALUE, KEY_READ, KEY_WRITE},
+    enums::{HKEY_LOCAL_MACHINE, KEY_QUERY_VALUE, KEY_READ, KEY_WRITE, KEY_CREATE_SUB_KEY},
     RegKey, RegValue,
 };
 
@@ -127,9 +127,9 @@ impl PlatformRuntime for WindowsRuntime {
             flags: Option<u32>,
         ) -> Result<(), Error> {
             if let (Some(runtime), Some(flags)) = (runtime, flags) {
-                let key = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey_with_flags(
+                let (key, _disp) = RegKey::predef(HKEY_LOCAL_MACHINE).create_subkey_with_flags(
                     reg_path,
-                    flags | KEY_WRITE | KEY_READ | KEY_QUERY_VALUE,
+                    flags | KEY_WRITE | KEY_READ | KEY_QUERY_VALUE | KEY_CREATE_SUB_KEY,
                 )?;
                 key.set_value(ACTIVE_RUNTIME, &runtime.get_manifest_path().as_os_str())?;
             }
