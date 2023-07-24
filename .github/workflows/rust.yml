@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: REUSE Compliance Check
-        uses: fsfe/reuse-action@v1
+        uses: fsfe/reuse-action@v2
       - name: Deps
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgtk-3-dev
       - uses: EmbarkStudios/cargo-deny-action@v1
