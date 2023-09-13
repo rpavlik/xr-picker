@@ -38,3 +38,10 @@ unlicensed = "deny"
 multiple-versions = "allow"
 # Lint level for when a crate version requirement is `*`
 wildcards = "warn"
+
+
+
+[[bans.deny]]
+# These ship a precompiled binary blob instead of source
+name = "serde_derive"
+version = ">=1.0.172, <1.0.184"
