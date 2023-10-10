@@ -15,11 +15,11 @@ version = "2.2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-eframe = {version = "0.23.0", features = ["persistence"]}
-egui-winit = {version = "0.23.0", default-features = false}
-image = {version = "0.24.7", default-features = false, features = ["png"]}
-itertools = "0.11.0"
-rfd = "0.12.0"
+eframe = {version = "0.23", features = ["persistence"]}
+egui-winit = {version = "0.23", default-features = false}
+image = {version = "0.24", default-features = false, features = ["png"]}
+itertools = "0.11"
+rfd = "0.12"
 xrpicker = {path = "../xrpicker-core", version = "2.2.0"}
 
 # To add icon to EXE
@@ -28,7 +28,7 @@ winres = "0.1"
 
 [target.'cfg(linux)'.dependencies]
 # Only need wayland support on linux
-egui-winit = {version = "0.22.0", default-features = false, features = ["wayland"]}
+egui-winit = {version = "0.23", default-features = false, features = ["wayland"]}
 
 [package.metadata.winres]
 LegalCopyright = "Copyright © 2022-2023, Collabora, Ltd."
