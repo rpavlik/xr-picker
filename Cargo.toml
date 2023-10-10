@@ -5,3 +5,4 @@ members = [
     "xrpicker-core",
     "xrpicker-gui",
 ]
+resolver = "2"
