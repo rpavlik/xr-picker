@@ -2082,9 +2082,9 @@ checksum = "c3cbb081b9784b07cceb8824c8583f86db4814d172ab043f3c23f7dc600bf83d"
 
 [[package]]
 name = "rfd"
-version = "0.12.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "241a0deb168c88050d872294f7b3106c1dfa8740942bcc97bc91b98e97b5c501"
+checksum = "3c9e7b57df6e8472152674607f6cc68aa14a748a3157a857a94f516e11aeacc2"
 dependencies = [
  "block",
  "dispatch",
@@ -3290,7 +3290,7 @@ checksum = "0fcb9cbac069e033553e8bb871be2fbdffcab578eb25bd0f7c508cedc6dcd75a"
 
 [[package]]
 name = "xrpicker"
-version = "2.2.0"
+version = "2.2.1"
 dependencies = [
  "dirs",
  "iswow64",
@@ -3306,7 +3306,7 @@ dependencies = [
 
 [[package]]
 name = "xrpicker-gui"
-version = "2.2.0"
+version = "2.2.1"
 dependencies = [
  "eframe",
  "egui-winit",
