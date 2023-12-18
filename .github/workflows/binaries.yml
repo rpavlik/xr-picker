@@ -22,7 +22,7 @@ jobs:
       - name: Build
         run: cargo build --release --verbose
       - name: Archive binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-build
           path: target/release/xrpicker-gui
@@ -35,7 +35,7 @@ jobs:
       - name: Build
         run: cargo build --release --verbose
       - name: Archive binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-build
           path: target/release/xrpicker-gui.exe
