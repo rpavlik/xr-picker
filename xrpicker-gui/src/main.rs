@@ -195,7 +195,7 @@ enum HeaderAction {
 
 impl HeaderAction {
     /// Does this header action imply the need to refresh the runtime list?
-    fn should_refresh(&self, new_extra_paths: &Vec<PathBuf>) -> bool {
+    fn should_refresh(&self, new_extra_paths: &[PathBuf]) -> bool {
         if !new_extra_paths.is_empty() {
             return true;
         }
