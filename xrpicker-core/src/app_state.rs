@@ -21,7 +21,7 @@ impl PersistentAppState {
             self.extra_paths.extend(
                 old_extra_paths
                     .into_iter()
-                    .chain(new_extra_paths.into_iter())
+                    .chain(new_extra_paths)
                     .unique(),
             );
         }
@@ -108,7 +108,7 @@ impl<T: Platform> AppState<T> {
             .runtimes
             .into_iter()
             // chain on the new ones
-            .chain(new_runtimes.into_iter())
+            .chain(new_runtimes)
             // only keep the unique ones, preferring the earlier ones
             .unique_by(|r| {
                 // compare by the list of manifests used
