@@ -348,7 +348,7 @@ fn update_theme(ctx: &egui::Context) {
 }
 
 impl<T: Platform> eframe::App for PickerApp<T> {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if !self.fixed_theme {
             update_theme(ctx);
             self.fixed_theme = true;
