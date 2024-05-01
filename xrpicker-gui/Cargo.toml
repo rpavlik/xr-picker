@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023, Collabora, Ltd.
+# SPDX-FileCopyrightText: 2022-2024, Collabora, Ltd.
 # SPDX-License-Identifier: CC0-1.0
 
 [package]
@@ -15,12 +15,12 @@ version = "2.2.1"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-eframe = {version = "0.23", features = ["persistence"]}
-egui-winit = {version = "0.23", default-features = false}
-image = {version = "0.24", default-features = false, features = ["png"]}
-itertools = "0.11"
-rfd = "0.12"
-xrpicker = {path = "../xrpicker-core", version = "2.2.1"}
+eframe = { version = "0.27.2", features = ["persistence"] }
+egui-winit = { version = "0.27.2", default-features = false }
+image = { version = "0.25.1", default-features = false, features = ["png"] }
+itertools = "0.12.1"
+rfd = "0.14.1"
+xrpicker = { path = "../xrpicker-core", version = "2.2.1" }
 
 # To add icon to EXE
 [target.'cfg(windows)'.build-dependencies]
@@ -28,8 +28,10 @@ winres = "0.1"
 
 [target.'cfg(linux)'.dependencies]
 # Only need wayland support on linux
-egui-winit = {version = "0.23", default-features = false, features = ["wayland"]}
+egui-winit = { version = "0.27.2", default-features = false, features = [
+    "wayland",
+] }
 
 [package.metadata.winres]
-LegalCopyright = "Copyright © 2022-2023, Collabora, Ltd."
+LegalCopyright = "Copyright © 2022-2024, Collabora, Ltd."
 OriginalFilename = "xrpicker-gui.exe"
