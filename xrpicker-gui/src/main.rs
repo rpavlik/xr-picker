@@ -4,11 +4,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 #![forbid(unsafe_code)]
 
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
 use eframe::{
     egui::{self, TextStyle},
-    epaint::{Color32, Vec2},
+    epaint::Color32,
 };
 
 use itertools::Itertools;
@@ -19,12 +19,12 @@ use xrpicker::{
 // const ICON_32: &[u8; 542] = include_bytes!("../assets/icon/icon32.png");
 const ICON_48: &[u8; 727] = include_bytes!("../assets/icon/icon48.png");
 
-fn load_icon(icon_data: &[u8]) -> Option<eframe::IconData> {
-    let image = image::load_from_memory_with_format(icon_data, image::ImageFormat::Png).ok()?;
+fn load_icon(icon_data: &[u8]) -> Arc<egui::IconData> {
+    let image = image::load_from_memory_with_format(icon_data, image::ImageFormat::Png).ok().unwrap();
     let image = image.into_rgba8();
     let (width, height) = image.dimensions();
     let rgba = image.into_raw();
-    Some(eframe::IconData {
+    Arc::new(egui::IconData {
         rgba,
         width,
         height,
@@ -359,7 +359,7 @@ impl<T: Platform> eframe::App for PickerApp<T> {
             self.state.replace(new_state);
         } else {
             // unlikely/impossible to get here, but let's clean up nicely if we do.
-            frame.close()
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close)
         }
     }
 
@@ -375,11 +375,9 @@ impl<T: Platform> eframe::App for PickerApp<T> {
 
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
-        icon_data: load_icon(ICON_48),
-        min_window_size: Some(Vec2 {
-            x: 800.0,
-            y: 256.0,
-        }),
+        viewport: egui::ViewportBuilder::default()
+            .with_min_inner_size([800.0, 256.0])
+            .with_icon(load_icon(ICON_48)),
         ..Default::default()
     };
     eframe::run_native(
