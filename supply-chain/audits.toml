@@ -13,6 +13,18 @@ criteria = "safe-to-deploy"
 delta = "0.19.0 -> 0.21.0"
 notes = "Only additional algorithm and simple, safe data structure added."
 
+[[audits.futures-io]]
+who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
+criteria = "safe-to-deploy"
+delta = "0.3.28 -> 0.3.30"
+notes = "No change in this crate for these two releases."
+
+[[audits.futures-sink]]
+who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
+criteria = "safe-to-deploy"
+delta = "0.3.28 -> 0.3.30"
+notes = "No changes in this crate for these two releases."
+
 [[audits.instant]]
 who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
 criteria = "safe-to-run"
@@ -37,6 +49,12 @@ criteria = "safe-to-deploy"
 delta = "1.0.9 -> 1.0.12"
 notes = "Changes only affect documentation and build process dependencies."
 
+[[audits.serde_derive]]
+who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.198 -> 1.0.200"
+notes = "No functional change in this crate."
+
 [[audits.special-folder]]
 who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
 criteria = "safe-to-deploy"
@@ -51,6 +69,12 @@ who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
 criteria = "safe-to-deploy"
 delta = "1.0.6 -> 1.0.8"
 notes = "Changes only affect documentation."
+
+[[audits.winapi-build]]
+who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
+criteria = "safe-to-deploy"
+version = "0.1.1"
+notes = "Utilities for passing link arguments to rustc in build.rs files. Innocuous."
 
 [[audits.windows-targets]]
 who = "Rylie Pavlik <rylie.pavlik@collabora.com>"
