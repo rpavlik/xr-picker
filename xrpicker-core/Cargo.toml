@@ -1,8 +1,8 @@
-# SPDX-FileCopyrightText: 2022-2023, Collabora, Ltd.
+# SPDX-FileCopyrightText: 2022-2024, Collabora, Ltd.
 # SPDX-License-Identifier: CC0-1.0
 
 [package]
-authors = ["Ryan Pavlik <ryan.pavlik@collabora.com>"]
+authors = ["Rylie Pavlik <rylie.pavlik@collabora.com>"]
 categories = ["config"]
 description = "Core functionality of enumerating OpenXR runtimes, identifying the active runtime, and updating the active runtime"
 edition = "2021"

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [package]
-authors = ["Ryan Pavlik <ryan.pavlik@collabora.com>"]
+authors = ["Rylie Pavlik <rylie.pavlik@collabora.com>"]
 description = "Choose your active OpenXR runtime in a friendly graphical interface"
 edition = "2021"
 homepage = "https://github.com/rpavlik/xr-picker"
