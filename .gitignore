@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022, Collabora, Ltd.
+# SPDX-FileCopyrightText: 2022-2024, Collabora, Ltd.
 # SPDX-License-Identifier: CC0-1.0
 
 /target
@@ -7,3 +7,4 @@
 !.gitignore
 !.reuse
 !.github
+!.mailmap
