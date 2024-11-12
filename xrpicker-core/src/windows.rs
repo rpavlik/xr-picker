@@ -15,7 +15,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use winreg::{
-    enums::{HKEY_LOCAL_MACHINE, KEY_QUERY_VALUE, KEY_READ, KEY_WRITE, KEY_CREATE_SUB_KEY},
+    enums::{HKEY_LOCAL_MACHINE, KEY_CREATE_SUB_KEY, KEY_QUERY_VALUE, KEY_READ, KEY_WRITE},
     RegKey, RegValue,
 };
 
