@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2022-2024, Collabora, Ltd.
 # SPDX-License-Identifier: CC0-1.0
 
+[graph]
 targets = [
   {triple = "x86_64-unknown-linux-gnu"},
   {triple = "x86_64-pc-windows-msvc"},
@@ -22,13 +23,10 @@ allow = [
   "OFL-1.1",
 ]
 confidence-threshold = 0.93
-copyleft = "warn"
-default = "deny"
 exceptions = [
   {allow = ["Unicode-DFS-2016"], name = "unicode-ident"}, # Unicode data
   {allow = ["MPL-2.0"], name = "option-ext"}, # file level copyleft OK
 ]
-unlicensed = "deny"
 
 [bans]
 # Lint level for when multiple versions of the same crate are detectedignore
