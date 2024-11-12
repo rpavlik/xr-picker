@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023, Collabora, Ltd.
+# SPDX-FileCopyrightText: 2022-2024, Collabora, Ltd.
 # SPDX-License-Identifier: CC0-1.0
 
 targets = [
@@ -25,10 +25,8 @@ confidence-threshold = 0.93
 copyleft = "warn"
 default = "deny"
 exceptions = [
-  {allow = ["LicenseRef-UFL-1.0"], name = "epaint"}, # default font - in exception because not standard SPDX ID
   {allow = ["Unicode-DFS-2016"], name = "unicode-ident"}, # Unicode data
   {allow = ["MPL-2.0"], name = "option-ext"}, # file level copyleft OK
-  {allow = ["Apache-2.0 WITH LLVM-exception"], name = "target-lexicon"},
 ]
 unlicensed = "deny"
 
