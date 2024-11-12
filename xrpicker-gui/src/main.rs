@@ -20,7 +20,9 @@ use xrpicker::{
 const ICON_48: &[u8; 727] = include_bytes!("../assets/icon/icon48.png");
 
 fn load_icon(icon_data: &[u8]) -> Arc<egui::IconData> {
-    let image = image::load_from_memory_with_format(icon_data, image::ImageFormat::Png).ok().unwrap();
+    let image = image::load_from_memory_with_format(icon_data, image::ImageFormat::Png)
+        .ok()
+        .unwrap();
     let image = image.into_rgba8();
     let (width, height) = image.dimensions();
     let rgba = image.into_raw();

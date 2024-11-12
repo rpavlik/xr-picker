@@ -18,12 +18,8 @@ impl PersistentAppState {
     pub fn append_new_extra_paths(&mut self, new_extra_paths: Vec<PathBuf>) {
         if !new_extra_paths.is_empty() {
             let old_extra_paths = std::mem::take(&mut self.extra_paths);
-            self.extra_paths.extend(
-                old_extra_paths
-                    .into_iter()
-                    .chain(new_extra_paths)
-                    .unique(),
-            );
+            self.extra_paths
+                .extend(old_extra_paths.into_iter().chain(new_extra_paths).unique());
         }
     }
 }
