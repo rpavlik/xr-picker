@@ -385,6 +385,6 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "XR Runtime Picker for OpenXR",
         options,
-        Box::new(|cc| Box::new(PickerApp::new(make_platform(), cc))),
+        Box::new(|cc| Ok(Box::new(PickerApp::new(make_platform(), cc)))),
     )
 }

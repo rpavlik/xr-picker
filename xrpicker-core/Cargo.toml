@@ -16,11 +16,11 @@ version = "2.2.1"
 
 [dependencies]
 dirs = "5.0"
-itertools = "0.11"
-object = "0.32"
+itertools = "0.13.0"
+object = "0.36.5"
 serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
-thiserror = "1.0"
+thiserror = "2.0.3"
 
 [target.'cfg(unix)'.dependencies]
 xdg = "2.5"
@@ -28,4 +28,4 @@ xdg = "2.5"
 [target.'cfg(windows)'.dependencies]
 iswow64 = "0.1.0"
 special-folder = "0.2"
-winreg = "0.51.0"
+winreg = "0.52.0"
