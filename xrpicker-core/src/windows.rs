@@ -107,6 +107,27 @@ fn get_active_runtime_manifest_path(prefix: &Path, reg_flags: Option<u32>) -> Op
     Some(Path::new(&val).to_path_buf())
 }
 
+fn set_active_in_registry(runtime: &WindowsRuntime) -> Result<(), Error> {
+    fn try_set_active(
+        reg_path: &Path,
+        runtime: &Option<BaseRuntime>,
+        flags: Option<u32>,
+    ) -> Result<(), Error> {
+        if let (Some(runtime), Some(flags)) = (runtime, flags) {
+            let (key, _disp) = RegKey::predef(HKEY_LOCAL_MACHINE).create_subkey_with_flags(
+                reg_path,
+                flags | KEY_WRITE | KEY_READ | KEY_QUERY_VALUE | KEY_CREATE_SUB_KEY,
+            )?;
+            key.set_value(ACTIVE_RUNTIME, &runtime.get_manifest_path().as_os_str())?;
+        }
+        Ok(())
+    }
+    let key = make_prefix_key();
+    try_set_active(&key, &self.base64, make_prefix_key_flags_64())?;
+    try_set_active(&key, &self.base32, make_prefix_key_flags_32())?;
+    Ok(())
+}
+
 impl WindowsRuntime {
     fn new(path64: Option<&Path>, path32: Option<&Path>) -> Result<Self, Error> {
         let base64 = path64.map(BaseRuntime::new).transpose()?;
@@ -121,24 +142,7 @@ impl WindowsRuntime {
 
 impl PlatformRuntime for WindowsRuntime {
     fn make_active(&self) -> Result<(), Error> {
-        fn try_set_active(
-            reg_path: &Path,
-            runtime: &Option<BaseRuntime>,
-            flags: Option<u32>,
-        ) -> Result<(), Error> {
-            if let (Some(runtime), Some(flags)) = (runtime, flags) {
-                let (key, _disp) = RegKey::predef(HKEY_LOCAL_MACHINE).create_subkey_with_flags(
-                    reg_path,
-                    flags | KEY_WRITE | KEY_READ | KEY_QUERY_VALUE | KEY_CREATE_SUB_KEY,
-                )?;
-                key.set_value(ACTIVE_RUNTIME, &runtime.get_manifest_path().as_os_str())?;
-            }
-            Ok(())
-        }
-        let key = make_prefix_key();
-        try_set_active(&key, &self.base64, make_prefix_key_flags_64())?;
-        try_set_active(&key, &self.base32, make_prefix_key_flags_32())?;
-        Ok(())
+        set_active_in_registry(self)
     }
 
     fn get_runtime_name(&self) -> String {
