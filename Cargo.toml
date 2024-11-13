@@ -3,6 +3,6 @@
 [workspace]
 members = [
     "xrpicker-core",
-    "xrpicker-gui",
+    "xrpicker-gui", "xrpicker-setruntime",
 ]
 resolver = "2"

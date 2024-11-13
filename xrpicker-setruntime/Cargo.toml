@@ -1,0 +1,22 @@
+[package]
+authors = ["Rylie Pavlik <rylie.pavlik@collabora.com>"]
+description = "Utility binary to perform elevated runtime setting on Windows"
+edition = "2021"
+homepage = "https://github.com/rpavlik/xr-picker"
+license = "MIT OR Apache-2.0"
+name = "xrpicker-setruntime"
+readme = "../README.md"
+repository = "https://github.com/rpavlik/xr-picker"
+version = "2.3.0"
+
+[dependencies]
+xrpicker = { path = "../xrpicker-core", version = "2.3.0" }
+
+
+# To add icon to EXE
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
+
+[package.metadata.winres]
+LegalCopyright = "Copyright © 2022-2024, Collabora, Ltd."
+OriginalFilename = "xrpicker-setruntime.exe"
