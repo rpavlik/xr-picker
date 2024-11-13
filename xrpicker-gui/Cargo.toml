@@ -22,7 +22,7 @@ itertools = "0.13.0"
 rfd = "0.15.0"
 xrpicker = { path = "../xrpicker-core", version = "2.3.0" }
 
-# To add icon to EXE
+# To add icon, manifeset to EXE
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"
 

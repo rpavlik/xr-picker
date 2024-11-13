@@ -93,7 +93,7 @@ impl ActiveState {
 }
 
 #[cfg(unix)]
-mod linux;
+pub mod linux;
 #[cfg(unix)]
 pub use linux::make_platform;
 

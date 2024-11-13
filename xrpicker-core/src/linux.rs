@@ -1,4 +1,4 @@
-// Copyright 2022-2023, Collabora, Ltd.
+// Copyright 2022-2024, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use xdg::{BaseDirectories, BaseDirectoriesError};
@@ -36,7 +36,7 @@ pub struct LinuxRuntime {
 }
 
 impl LinuxRuntime {
-    fn new(orig_path: &Path, canonical_path: &Path) -> Result<Self, Error> {
+    pub fn new(orig_path: &Path, canonical_path: &Path) -> Result<Self, Error> {
         let base = BaseRuntime::new(canonical_path)?;
         Ok(LinuxRuntime {
             base,
