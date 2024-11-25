@@ -47,10 +47,8 @@ impl LinuxRuntime {
 
 impl PlatformRuntime for LinuxRuntime {
     fn make_active(&self) -> Result<(), Error> {
-        fn convert_err(e: BaseDirectoriesError) -> Error {
-            Error::SetActiveError(e.to_string())
-        }
-        let dirs = BaseDirectories::new().map_err(convert_err)?;
+        let dirs = BaseDirectories::new()
+            .map_err(|e: BaseDirectoriesError| Error::SetActiveError(e.to_string()))?;
         let suffix = make_path_suffix();
         let path = dirs.place_config_file(suffix.join(ACTIVE_RUNTIME_FILENAME))?;
 
