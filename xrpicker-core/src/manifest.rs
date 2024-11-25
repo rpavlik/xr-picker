@@ -1,9 +1,9 @@
-// Copyright 2022, Collabora, Ltd.
+// Copyright 2022-2024, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use std::path::Path;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::path_simplifier::PathSimplifier;
 
@@ -65,17 +65,17 @@ pub(crate) trait GenericManifest {
 
 /// Non-top-level objects in a runtime manifest
 pub(crate) mod json_subobjects {
-    use serde::Deserialize;
+    use serde::{Deserialize, Serialize};
 
     /// The optional table of function symbol renaming in a runtime manifest
-    #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+    #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
     pub(crate) struct RuntimeFunctions {
         #[serde(rename = "xrNegotiateLoaderRuntimeInterface")]
         pub(crate) xr_negotiate_loader_runtime_interface: Option<String>,
     }
 
     /// The main object in a runtime manifest
-    #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+    #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
     pub(crate) struct Runtime {
         pub(crate) library_path: String,
         pub(crate) name: Option<String>,
@@ -84,7 +84,7 @@ pub(crate) mod json_subobjects {
 }
 
 /// Top level structure corresponding to a runtime manifest
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub(crate) struct RuntimeManifest {
     file_format_version: String,
     pub(crate) runtime: json_subobjects::Runtime,

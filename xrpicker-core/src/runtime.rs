@@ -1,4 +1,4 @@
-// Copyright 2022, Collabora, Ltd.
+// Copyright 2022-2024, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use std::{
@@ -6,12 +6,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use serde::{Deserialize, Serialize};
+
 use crate::{manifest::GenericManifest, Error, RuntimeManifest};
 
 /// The path and parsed data of a runtime manifest.
 ///
 /// Used inside platform-specific types that implement `PlatformRuntime`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub(crate) struct BaseRuntime {
     manifest_path: PathBuf,
     manifest: RuntimeManifest,

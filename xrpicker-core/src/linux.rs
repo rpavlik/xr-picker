@@ -1,6 +1,7 @@
 // Copyright 2022-2024, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use serde::{Deserialize, Serialize};
 use xdg::{BaseDirectories, BaseDirectoriesError};
 
 use crate::{
@@ -29,7 +30,7 @@ fn make_sysconfdir(suffix: &Path) -> PathBuf {
     Path::new(ETC).join(suffix)
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct LinuxRuntime {
     base: BaseRuntime,
     orig_path: PathBuf,
