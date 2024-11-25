@@ -1,4 +1,4 @@
-// Copyright 2022-2023, Collabora, Ltd.
+// Copyright 2022-2024, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use std::path::{Path, PathBuf};
@@ -20,6 +20,12 @@ pub trait PlatformRuntime {
 
     /// Describe this specific instance of a runtime: usually using the manifest(s) and library
     fn describe(&self) -> String;
+}
+
+/// Trait referring to a runtime, to allow creation of a PlatformRuntime object
+pub trait RuntimeReference: Sized {
+    fn serialize(&self) -> Result<String, Error>;
+    fn deserialize(buf: &str) -> Result<Self, Error>;
 }
 
 /// Trait abstracting over the underlying system/platform type.

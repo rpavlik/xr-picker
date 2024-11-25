@@ -7,7 +7,7 @@ use xdg::{BaseDirectories, BaseDirectoriesError};
 use crate::{
     manifest::{GenericManifest, FILE_INDIRECTION_ARROW},
     path_simplifier::PathSimplifier,
-    platform::{Platform, PlatformRuntime},
+    platform::{Platform, PlatformRuntime, RuntimeReference},
     runtime::BaseRuntime,
     ActiveState, Error, ManifestError, ACTIVE_RUNTIME_FILENAME, OPENXR, OPENXR_MAJOR_VERSION,
 };
@@ -31,9 +31,31 @@ fn make_sysconfdir(suffix: &Path) -> PathBuf {
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
+pub struct LinuxRuntimeReference {
+    orig_path: PathBuf,
+    canonical_path: PathBuf,
+}
+
+impl RuntimeReference for LinuxRuntimeReference {
+    fn deserialize(buf: &str) -> Result<Self, Error> {
+        serde_json::from_str::<LinuxRuntimeReference>(buf).map_err(Error::JsonParseError)
+    }
+    fn serialize(&self) -> Result<String, Error> {
+        serde_json::to_string(self).map_err(Error::JsonParseError)
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct LinuxRuntime {
     base: BaseRuntime,
     orig_path: PathBuf,
+}
+
+impl TryFrom<&LinuxRuntimeReference> for LinuxRuntime {
+    type Error = Error;
+    fn try_from(value: &LinuxRuntimeReference) -> Result<Self, Self::Error> {
+        LinuxRuntime::new(&value.orig_path, &value.canonical_path)
+    }
 }
 
 impl LinuxRuntime {
