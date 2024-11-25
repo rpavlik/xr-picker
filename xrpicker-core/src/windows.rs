@@ -19,6 +19,21 @@ use winreg::{
     RegKey, RegValue,
 };
 
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
+pub struct WindowsRuntimeReference {
+    path64: Option<PathBuf>,
+    path32: Option<PathBuf>,
+}
+
+impl RuntimeReference for WindowsRuntimeReference {
+    fn deserialize(buf: &str) -> Result<Self, Error> {
+        serde_json::from_str::<WindowsRuntimeReference>(buf).map_err(Error::JsonParseError)
+    }
+    fn serialize(&self) -> Result<String, Error> {
+        serde_json::to_string(self).map_err(Error::JsonParseError)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct WindowsRuntime {
     base64: Option<BaseRuntime>,
@@ -126,6 +141,13 @@ fn set_active_in_registry(runtime: &WindowsRuntime) -> Result<(), Error> {
     try_set_active(&key, &self.base64, make_prefix_key_flags_64())?;
     try_set_active(&key, &self.base32, make_prefix_key_flags_32())?;
     Ok(())
+}
+
+impl TryFrom<&WindowsRuntimeReference> for WindowsRuntime {
+    type Error = Error;
+    fn try_from(value: &WindowsRuntimeReference) -> Result<Self, Self::Error> {
+        WindowsRuntime::new(value.path64.borrow(), value.path32.borrow())
+    }
 }
 
 impl WindowsRuntime {
