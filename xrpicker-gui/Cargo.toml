@@ -19,7 +19,7 @@ eframe = { version = "0.29.1", features = ["persistence"] }
 egui-winit = { version = "0.29.1", default-features = false }
 image = { version = "0.25.1", default-features = false, features = ["png"] }
 itertools = "0.13.0"
-rfd = "0.15.0"
+rfd = "0.15.2"
 xrpicker = { path = "../xrpicker-core", version = "2.3.0" }
 
 # To add icon to EXE
