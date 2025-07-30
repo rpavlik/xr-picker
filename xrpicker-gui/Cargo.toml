@@ -15,8 +15,8 @@ version = "2.3.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-eframe = { version = "0.30.0", features = ["persistence"] }
-egui-winit = { version = "0.30.0", default-features = false }
+eframe = { version = "0.32.0", features = ["persistence"] }
+egui-winit = { version = "0.32.0", default-features = false }
 image = { version = "0.25.1", default-features = false, features = ["png"] }
 itertools = "0.14.0"
 rfd = "0.15.0"
@@ -30,7 +30,7 @@ winres = "0.1"
 
 [target.'cfg(linux)'.dependencies]
 # Only need wayland support on linux
-egui-winit = { version = "0.30.0", default-features = false, features = [
+egui-winit = { version = "0.32.0", default-features = false, features = [
     "wayland",
 ] }
 
