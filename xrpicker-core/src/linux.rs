@@ -49,28 +49,20 @@ impl LinuxRuntime {
     }
 }
 
-fn guess_manifest_arch_from_fn(manifest_path: &PathBuf) -> Option<RuntimeArchAbi> {
+// TODO test
+fn guess_manifest_arch_from_fn(manifest_path: &Path) -> Option<RuntimeArchAbi> {
     let arch: Option<_> = if let Some(manifest_fn) = manifest_path
         .file_name()
         .expect("Manifest path has file name")
         .to_str()
     {
         RuntimeArchAbi::iter()
-            .filter(|&arch| {
-                manifest_fn.ends_with(ManifestArchDecoration::from(arch).get_filename_suffix())
-            })
+            .filter(|&arch| manifest_fn.ends_with(arch.filename_suffix()))
             .next() // get the first (and only) item if available
     } else {
         None
     };
     arch
-}
-fn guess_active_runtime_fn(manifest_path: &PathBuf) -> String {
-    ACTIVE_RUNTIME_FILE_STEM.to_string()
-        + match arch {
-            Some(arch) => ManifestArchDecoration::from(arch).get_filename_suffix(),
-            None => ManifestArchDecoration::Unspecified.get_filename_suffix(),
-        }
 }
 
 impl PlatformRuntime for LinuxRuntime {
@@ -78,7 +70,8 @@ impl PlatformRuntime for LinuxRuntime {
         let dirs = BaseDirectories::new();
         let dir_suffix = make_path_suffix();
 
-        let active_runtime_filename = guess_active_runtime_fn(self.base.get_manifest_path());
+        let arch = guess_manifest_arch_from_fn(self.base.get_manifest_path());
+        let active_runtime_filename = ACTIVE_RUNTIME_FILE_STEM.to_string() + ManifestArchDecoration::from(arch).filename_suffix()
 
         let path = dirs.place_config_file(dir_suffix.join(active_runtime_filename))?;
 
