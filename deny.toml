@@ -13,20 +13,21 @@ ignore = []
 [licenses]
 # The lint level for crates which do not have a detectable license
 allow = [
-  "MIT",
   "Apache-2.0",
-  "BSD-3-Clause",
   "BSD-2-Clause",
+  "BSD-3-Clause",
   "BSL-1.0",
-  "Zlib",
+  "CC0-1.0",
   "ISC",
+  "MIT",
   "OFL-1.1",
   "Unicode-3.0",
+  "Zlib",
 ]
 confidence-threshold = 0.93
 exceptions = [
   {allow = ["Unicode-DFS-2016"], name = "unicode-ident"}, # Unicode data
-  {allow = ["LicenseRef-UFL-1.0"], name = "epaint_default_fonts"}, # Ubuntu font, sigh. https://ubuntu.com/legal/font-licence/faq
+  {allow = ["Ubuntu-font-1.0"], name = "epaint_default_fonts"}, # Ubuntu font, sigh. https://ubuntu.com/legal/font-licence/faq
   {allow = ["MPL-2.0"], name = "option-ext"}, # file level copyleft OK
 ]
 
