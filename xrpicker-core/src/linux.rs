@@ -1,7 +1,7 @@
-// Copyright 2022-2023, Collabora, Ltd.
+// Copyright 2022-2025, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use xdg::{BaseDirectories, BaseDirectoriesError};
+use xdg::BaseDirectories;
 
 use crate::{
     manifest::{GenericManifest, FILE_INDIRECTION_ARROW},
@@ -47,10 +47,7 @@ impl LinuxRuntime {
 
 impl PlatformRuntime for LinuxRuntime {
     fn make_active(&self) -> Result<(), Error> {
-        fn convert_err(e: BaseDirectoriesError) -> Error {
-            Error::SetActiveError(e.to_string())
-        }
-        let dirs = BaseDirectories::new().map_err(convert_err)?;
+        let dirs = BaseDirectories::new();
         let suffix = make_path_suffix();
         let path = dirs.place_config_file(suffix.join(ACTIVE_RUNTIME_FILENAME))?;
 
@@ -135,9 +132,8 @@ fn is_active_runtime_name(p: &Path) -> bool {
 fn find_potential_manifests_xdg(suffix: &Path) -> impl Iterator<Item = PathBuf> {
     let suffix = suffix.to_owned();
     BaseDirectories::new()
-        .ok()
+        .list_config_files(&suffix)
         .into_iter()
-        .flat_map(move |xdg_dirs| xdg_dirs.list_config_files(&suffix))
         .filter(|p| !is_active_runtime_name(p))
 }
 
@@ -180,11 +176,7 @@ fn possible_active_runtimes() -> impl Iterator<Item = PathBuf> {
     let etc_iter = once(make_sysconfdir(&suffix));
     // Warning: BaseDirectories returns increasing order of importance, which is
     // opposite of what we want, so we reverse it.
-    let xdg_iter = BaseDirectories::new()
-        .ok()
-        .into_iter()
-        .flat_map(move |d| d.find_config_files(&suffix))
-        .rev();
+    let xdg_iter = BaseDirectories::new().find_config_files(&suffix).rev();
 
     xdg_iter
         .chain(etc_iter)
