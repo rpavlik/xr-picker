@@ -1,7 +1,6 @@
 // Copyright 2022-2025, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use itertools::Itertools;
 use strum::IntoEnumIterator;
 use xdg::BaseDirectories;
 
@@ -51,18 +50,15 @@ impl LinuxRuntime {
 
 // TODO test
 fn guess_manifest_arch_from_fn(manifest_path: &Path) -> Option<RuntimeArchAbi> {
-    let arch: Option<_> = if let Some(manifest_fn) = manifest_path
+    if let Some(manifest_fn) = manifest_path
         .file_name()
         .expect("Manifest path has file name")
         .to_str()
     {
-        RuntimeArchAbi::iter()
-            .filter(|&arch| manifest_fn.ends_with(arch.filename_suffix()))
-            .next() // get the first (and only) item if available
+        RuntimeArchAbi::iter().find(|&arch| manifest_fn.ends_with(arch.filename_suffix()))
     } else {
         None
-    };
-    arch
+    }
 }
 
 impl PlatformRuntime for LinuxRuntime {
