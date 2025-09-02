@@ -71,7 +71,8 @@ impl PlatformRuntime for LinuxRuntime {
         let dir_suffix = make_path_suffix();
 
         let arch = guess_manifest_arch_from_fn(self.base.get_manifest_path());
-        let active_runtime_filename = ACTIVE_RUNTIME_FILE_STEM.to_string() + ManifestArchDecoration::from(arch).filename_suffix()
+        let active_runtime_filename = ACTIVE_RUNTIME_FILE_STEM.to_string()
+            + ManifestArchDecoration::from(arch).filename_suffix();
 
         let path = dirs.place_config_file(dir_suffix.join(active_runtime_filename))?;
 
