@@ -18,9 +18,10 @@ version = "2.3.0"
 dirs = "6.0.0"
 itertools = "0.14.0"
 object = "0.37.1"
-serde = {version = "1.0", features = ["derive"]}
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "2.0.12"
+strum = { version = "0.27", features = ["derive"] }
 
 [target.'cfg(unix)'.dependencies]
 xdg = "3.0.0"

@@ -11,12 +11,28 @@ use crate::path_simplifier::PathSimplifier;
 // when used in a *multiline-capable* GUI field.
 pub(crate) const FILE_INDIRECTION_ARROW: &str = "\n    ⮩ ";
 
+pub(crate) enum LibraryPathKind {
+    DynamicLibrarySearchPath,
+    RelativeToManifest,
+    Absolute,
+}
+
 pub(crate) trait GenericManifest {
     /// Get the library path as stored in the manifest
     fn library_path(&self) -> &str;
 
     /// Check the file format version
     fn is_file_format_version_ok(&self) -> bool;
+
+    fn classify_library_path(&self) -> LibraryPathKind {
+        if self.uses_search_path() {
+            return LibraryPathKind::DynamicLibrarySearchPath;
+        }
+        if self.library_relative_to_manifest() {
+            return LibraryPathKind::RelativeToManifest;
+        }
+        LibraryPathKind::Absolute
+    }
 
     /// Does the library path use the system shared library search path?
     fn uses_search_path(&self) -> bool {
@@ -37,28 +53,28 @@ pub(crate) trait GenericManifest {
         let simplifier = PathSimplifier::new();
         let manifest_path = simplifier.simplify(manifest_path);
         let manifest = manifest_path.display();
-        if self.uses_search_path() {
-            format!(
+        match self.classify_library_path() {
+            LibraryPathKind::DynamicLibrarySearchPath => format!(
                 "{}{}{} in the dynamic library search path",
                 manifest,
                 FILE_INDIRECTION_ARROW,
                 self.library_path()
-            )
-        } else if self.library_relative_to_manifest() {
-            format!(
+            ),
+            LibraryPathKind::RelativeToManifest => format!(
                 "{}{}{} relative to the manifest",
                 manifest,
                 FILE_INDIRECTION_ARROW,
                 self.library_path()
-            )
-        } else {
-            let lib_path = Path::new(self.library_path());
-            format!(
-                "{}{}{}",
-                manifest,
-                FILE_INDIRECTION_ARROW,
-                simplifier.simplify(lib_path).display()
-            )
+            ),
+            LibraryPathKind::Absolute => {
+                let lib_path = Path::new(self.library_path());
+                format!(
+                    "{}{}{}",
+                    manifest,
+                    FILE_INDIRECTION_ARROW,
+                    simplifier.simplify(lib_path).display()
+                )
+            }
         }
     }
 }
