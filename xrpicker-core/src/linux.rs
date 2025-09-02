@@ -1,14 +1,18 @@
 // Copyright 2022-2025, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use itertools::Itertools;
+use strum::IntoEnumIterator;
 use xdg::BaseDirectories;
 
 use crate::{
+    arch_abi::{ManifestArchDecoration, RuntimeArchAbi},
     manifest::{GenericManifest, FILE_INDIRECTION_ARROW},
     path_simplifier::PathSimplifier,
     platform::{Platform, PlatformRuntime},
     runtime::BaseRuntime,
-    ActiveState, Error, ManifestError, ACTIVE_RUNTIME_FILENAME, OPENXR, OPENXR_MAJOR_VERSION,
+    ActiveState, Error, ManifestError, ACTIVE_RUNTIME_FILENAME, ACTIVE_RUNTIME_FILE_STEM, OPENXR,
+    OPENXR_MAJOR_VERSION,
 };
 use std::{
     collections::HashSet,
@@ -45,19 +49,46 @@ impl LinuxRuntime {
     }
 }
 
+fn guess_manifest_arch_from_fn(manifest_path: &PathBuf) -> Option<RuntimeArchAbi> {
+    let arch: Option<_> = if let Some(manifest_fn) = manifest_path
+        .file_name()
+        .expect("Manifest path has file name")
+        .to_str()
+    {
+        RuntimeArchAbi::iter()
+            .filter(|&arch| {
+                manifest_fn.ends_with(ManifestArchDecoration::from(arch).get_filename_suffix())
+            })
+            .next() // get the first (and only) item if available
+    } else {
+        None
+    };
+    arch
+}
+fn guess_active_runtime_fn(manifest_path: &PathBuf) -> String {
+    ACTIVE_RUNTIME_FILE_STEM.to_string()
+        + match arch {
+            Some(arch) => ManifestArchDecoration::from(arch).get_filename_suffix(),
+            None => ManifestArchDecoration::Unspecified.get_filename_suffix(),
+        }
+}
+
 impl PlatformRuntime for LinuxRuntime {
     fn make_active(&self) -> Result<(), Error> {
         let dirs = BaseDirectories::new();
-        let suffix = make_path_suffix();
-        let path = dirs.place_config_file(suffix.join(ACTIVE_RUNTIME_FILENAME))?;
+        let dir_suffix = make_path_suffix();
+
+        let active_runtime_filename = guess_active_runtime_fn(self.base.get_manifest_path());
+
+        let path = dirs.place_config_file(dir_suffix.join(active_runtime_filename))?;
 
         // First move the old file out of the way, if any.
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
-        let move_target =
-            dirs.place_config_file(suffix.join(format!("old_active_runtime{}.json", timestamp)))?;
+        let move_target = dirs
+            .place_config_file(dir_suffix.join(format!("old_active_runtime{}.json", timestamp)))?;
 
         match fs::rename(&path, &move_target) {
             Ok(_) => {

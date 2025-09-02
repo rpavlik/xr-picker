@@ -1,12 +1,14 @@
 // Copyright 2022-2025, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use strum::EnumIter;
+
 /// The defined architecture and ABI identifiers used to decorate active runtime manifest filenames on some platforms.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub enum ManifestArchDecoration {
     /// Architecture not indicated in filename
-    Arch_unspecified,
+    Unspecified,
     /// 64-bit x86 instructions, using an ILP32 model (32-bit pointers)
     Arch_x32,
     /// 64-bit x86
@@ -46,28 +48,28 @@ pub enum ManifestArchDecoration {
 }
 
 impl ManifestArchDecoration {
-    /// Get the decorated active runtime filename corresponding to a given architecture.
-    pub fn get_filename(self) -> &'static str {
+    /// Get the decorated runtime filename suffix corresponding to a given architecture.
+    pub fn get_filename_suffix(self) -> &'static str {
         match self {
-            ManifestArchDecoration::Arch_unspecified => "active_runtime.json",
-            ManifestArchDecoration::Arch_x32 => "active_runtime.x32.json",
-            ManifestArchDecoration::Arch_x86_64 => "active_runtime.x86_64.json",
-            ManifestArchDecoration::Arch_i686 => "active_runtime.i686.json",
-            ManifestArchDecoration::Arch_aarch64 => "active_runtime.aarch64.json",
-            ManifestArchDecoration::Arch_armv7a_vfp => "active_runtime.armv7a-vfp.json",
-            ManifestArchDecoration::Arch_armv5te => "active_runtime.armv5te.json",
-            ManifestArchDecoration::Arch_mips64 => "active_runtime.mips64.json",
-            ManifestArchDecoration::Arch_mips => "active_runtime.mips.json",
-            ManifestArchDecoration::Arch_ppc64 => "active_runtime.ppc64.json",
-            ManifestArchDecoration::Arch_ppc64el => "active_runtime.ppc64el.json",
-            ManifestArchDecoration::Arch_s390x => "active_runtime.s390x.json",
-            ManifestArchDecoration::Arch_hppa => "active_runtime.hppa.json",
-            ManifestArchDecoration::Arch_alpha => "active_runtime.alpha.json",
-            ManifestArchDecoration::Arch_ia64 => "active_runtime.ia64.json",
-            ManifestArchDecoration::Arch_m68k => "active_runtime.m68k.json",
-            ManifestArchDecoration::Arch_riscv64 => "active_runtime.riscv64.json",
-            ManifestArchDecoration::Arch_sparc64 => "active_runtime.sparc64.json",
-            ManifestArchDecoration::Arch_loongarch64 => "active_runtime.loongarch64.json",
+            ManifestArchDecoration::Unspecified => ".json",
+            ManifestArchDecoration::Arch_x32 => ".x32.json",
+            ManifestArchDecoration::Arch_x86_64 => ".x86_64.json",
+            ManifestArchDecoration::Arch_i686 => ".i686.json",
+            ManifestArchDecoration::Arch_aarch64 => ".aarch64.json",
+            ManifestArchDecoration::Arch_armv7a_vfp => ".armv7a-vfp.json",
+            ManifestArchDecoration::Arch_armv5te => ".armv5te.json",
+            ManifestArchDecoration::Arch_mips64 => ".mips64.json",
+            ManifestArchDecoration::Arch_mips => ".mips.json",
+            ManifestArchDecoration::Arch_ppc64 => ".ppc64.json",
+            ManifestArchDecoration::Arch_ppc64el => ".ppc64el.json",
+            ManifestArchDecoration::Arch_s390x => ".s390x.json",
+            ManifestArchDecoration::Arch_hppa => ".hppa.json",
+            ManifestArchDecoration::Arch_alpha => ".alpha.json",
+            ManifestArchDecoration::Arch_ia64 => ".ia64.json",
+            ManifestArchDecoration::Arch_m68k => ".m68k.json",
+            ManifestArchDecoration::Arch_riscv64 => ".riscv64.json",
+            ManifestArchDecoration::Arch_sparc64 => ".sparc64.json",
+            ManifestArchDecoration::Arch_loongarch64 => ".loongarch64.json",
         }
     }
 
@@ -108,7 +110,16 @@ impl ManifestArchDecoration {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+impl From<Option<RuntimeArchAbi>> for ManifestArchDecoration {
+    fn from(value: Option<RuntimeArchAbi>) -> Self {
+        match value {
+            Some(value) => ManifestArchDecoration::from(value),
+            None => ManifestArchDecoration::Unspecified,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter)]
 #[allow(non_camel_case_types)]
 pub enum RuntimeArchAbi {
     /// 64-bit x86 instructions, using an ILP32 model (32-bit pointers)
@@ -149,27 +160,27 @@ pub enum RuntimeArchAbi {
     Arch_loongarch64,
 }
 
-impl Into<ManifestArchDecoration> for RuntimeArchAbi {
-    fn into(self) -> ManifestArchDecoration {
-        match self {
-            RuntimeArchAbi::Arch_x32 => return ManifestArchDecoration::Arch_x32,
-            RuntimeArchAbi::Arch_x86_64 => return ManifestArchDecoration::Arch_x86_64,
-            RuntimeArchAbi::Arch_i686 => return ManifestArchDecoration::Arch_i686,
-            RuntimeArchAbi::Arch_aarch64 => return ManifestArchDecoration::Arch_aarch64,
-            RuntimeArchAbi::Arch_armv7a_vfp => return ManifestArchDecoration::Arch_armv7a_vfp,
-            RuntimeArchAbi::Arch_armv5te => return ManifestArchDecoration::Arch_armv5te,
-            RuntimeArchAbi::Arch_mips64 => return ManifestArchDecoration::Arch_mips64,
-            RuntimeArchAbi::Arch_mips => return ManifestArchDecoration::Arch_mips,
-            RuntimeArchAbi::Arch_ppc64 => return ManifestArchDecoration::Arch_ppc64,
-            RuntimeArchAbi::Arch_ppc64el => return ManifestArchDecoration::Arch_ppc64el,
-            RuntimeArchAbi::Arch_s390x => return ManifestArchDecoration::Arch_s390x,
-            RuntimeArchAbi::Arch_hppa => return ManifestArchDecoration::Arch_hppa,
-            RuntimeArchAbi::Arch_alpha => return ManifestArchDecoration::Arch_alpha,
-            RuntimeArchAbi::Arch_ia64 => return ManifestArchDecoration::Arch_ia64,
-            RuntimeArchAbi::Arch_m68k => return ManifestArchDecoration::Arch_m68k,
-            RuntimeArchAbi::Arch_riscv64 => return ManifestArchDecoration::Arch_riscv64,
-            RuntimeArchAbi::Arch_sparc64 => return ManifestArchDecoration::Arch_sparc64,
-            RuntimeArchAbi::Arch_loongarch64 => return ManifestArchDecoration::Arch_loongarch64,
+impl From<RuntimeArchAbi> for ManifestArchDecoration {
+    fn from(value: RuntimeArchAbi) -> Self {
+        match value {
+            RuntimeArchAbi::Arch_x32 => ManifestArchDecoration::Arch_x32,
+            RuntimeArchAbi::Arch_x86_64 => ManifestArchDecoration::Arch_x86_64,
+            RuntimeArchAbi::Arch_i686 => ManifestArchDecoration::Arch_i686,
+            RuntimeArchAbi::Arch_aarch64 => ManifestArchDecoration::Arch_aarch64,
+            RuntimeArchAbi::Arch_armv7a_vfp => ManifestArchDecoration::Arch_armv7a_vfp,
+            RuntimeArchAbi::Arch_armv5te => ManifestArchDecoration::Arch_armv5te,
+            RuntimeArchAbi::Arch_mips64 => ManifestArchDecoration::Arch_mips64,
+            RuntimeArchAbi::Arch_mips => ManifestArchDecoration::Arch_mips,
+            RuntimeArchAbi::Arch_ppc64 => ManifestArchDecoration::Arch_ppc64,
+            RuntimeArchAbi::Arch_ppc64el => ManifestArchDecoration::Arch_ppc64el,
+            RuntimeArchAbi::Arch_s390x => ManifestArchDecoration::Arch_s390x,
+            RuntimeArchAbi::Arch_hppa => ManifestArchDecoration::Arch_hppa,
+            RuntimeArchAbi::Arch_alpha => ManifestArchDecoration::Arch_alpha,
+            RuntimeArchAbi::Arch_ia64 => ManifestArchDecoration::Arch_ia64,
+            RuntimeArchAbi::Arch_m68k => ManifestArchDecoration::Arch_m68k,
+            RuntimeArchAbi::Arch_riscv64 => ManifestArchDecoration::Arch_riscv64,
+            RuntimeArchAbi::Arch_sparc64 => ManifestArchDecoration::Arch_sparc64,
+            RuntimeArchAbi::Arch_loongarch64 => ManifestArchDecoration::Arch_loongarch64,
         }
     }
 }

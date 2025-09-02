@@ -6,6 +6,7 @@
 pub const OPENXR_MAJOR_VERSION: i32 = 1;
 
 pub const ACTIVE_RUNTIME_FILENAME: &str = "active_runtime.json";
+pub const ACTIVE_RUNTIME_FILE_STEM: &str = "active_runtime";
 /// Directory used in constructing paths
 pub const OPENXR: &str = "openxr";
 
