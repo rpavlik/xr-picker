@@ -22,7 +22,7 @@ itertools = "0.14.0"
 rfd = "0.15.0"
 xrpicker = { path = "../xrpicker-core", version = "2.3.0" }
 
-wgpu = "25" # enables the wgpu default features so we get the default backends
+wgpu = "26" # enables the wgpu default features so we get the default backends
 
 # To add icon to EXE
 [target.'cfg(windows)'.build-dependencies]
