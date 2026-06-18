@@ -1,4 +1,4 @@
-// Copyright 2022-2023, Collabora, Ltd.
+// Copyright 2022-2026, Collabora, Ltd.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
@@ -82,7 +82,7 @@ trait GuiView<T: Platform> {
     fn update(
         self,
         platform: &T,
-        ctx: &egui::Context,
+        ui: &mut egui::Ui,
         persistent_state: &mut PersistentAppState,
     ) -> Result<AppState<T>, Error>;
 }
@@ -91,12 +91,12 @@ impl<T: Platform> GuiView<T> for Error {
     fn update(
         self,
         platform: &T,
-        ctx: &egui::Context,
+        ui: &mut egui::Ui,
         persistent_state: &mut PersistentAppState,
     ) -> Result<AppState<T>, Error> {
-        egui::TopBottomPanel::bottom("about").show(ctx, add_about_contents);
+        egui::Panel::bottom("about").show_inside(ui, add_about_contents);
         let repopulate = egui::CentralPanel::default()
-            .show(ctx, |ui| {
+            .show_inside(ui, |ui| {
                 ui.heading(format!("ERROR! {:?}", self));
                 if ui.button("Refresh").clicked() {
                     return true;
@@ -212,9 +212,9 @@ impl HeaderAction {
 
 /// Creates a top panel with a header and a refresh button.
 /// returns true if it should refresh
-fn header_with_browse_and_refresh_button(ctx: &egui::Context) -> HeaderAction {
-    egui::TopBottomPanel::top("header")
-        .show(ctx, |ui| {
+fn header_with_browse_and_refresh_button(ui: &mut egui::Ui) -> HeaderAction {
+    egui::Panel::top("header")
+        .show_inside(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.heading("XR Runtime Picker for OpenXR™");
 
@@ -253,17 +253,17 @@ impl<T: Platform> GuiView<T> for AppState<T> {
     fn update(
         mut self,
         platform: &T,
-        ctx: &egui::Context,
+        ui: &mut egui::Ui,
         persistent_state: &mut PersistentAppState,
     ) -> Result<AppState<T>, Error> {
-        egui::TopBottomPanel::bottom("about").show(ctx, add_about_contents);
+        egui::Panel::bottom("about").show_inside(ui, add_about_contents);
 
         if !self.nonfatal_errors.is_empty() {
-            egui::TopBottomPanel::bottom("non_fatal_errors")
-                .show(ctx, |ui| self.add_non_fatal_errors_listing(ui));
+            egui::Panel::bottom("non_fatal_errors")
+                .show_inside(ui, |ui| self.add_non_fatal_errors_listing(ui));
         }
 
-        let header_action = header_with_browse_and_refresh_button(ctx);
+        let header_action = header_with_browse_and_refresh_button(ui);
 
         let mut new_extra_paths = vec![];
 
@@ -284,7 +284,7 @@ impl<T: Platform> GuiView<T> for AppState<T> {
         }
 
         // handle drag and drop
-        ctx.input(|i| {
+        ui.input(|i| {
             if !i.raw.dropped_files.is_empty() {
                 for file in &i.raw.dropped_files {
                     if let Some(p) = &file.path {
@@ -298,7 +298,7 @@ impl<T: Platform> GuiView<T> for AppState<T> {
         // Central panel must come last
         let should_refresh = header_action.should_refresh(&new_extra_paths)
             || egui::CentralPanel::default()
-                .show(ctx, |ui| self.add_runtime_grid(platform, ui))
+                .show_inside(ui, |ui| self.add_runtime_grid(platform, ui))
                 .inner?; // get at the nested closure's return value (whether to repopulate), after handling errors.
 
         persistent_state.append_new_extra_paths(new_extra_paths);
@@ -314,12 +314,12 @@ impl<T: Platform> GuiView<T> for Result<AppState<T>, Error> {
     fn update(
         self,
         platform: &T,
-        ctx: &egui::Context,
+        ui: &mut egui::Ui,
         persistent_state: &mut PersistentAppState,
     ) -> Result<AppState<T>, Error> {
         match self {
-            Ok(state) => state.update(platform, ctx, persistent_state),
-            Err(e) => e.update(platform, ctx, persistent_state),
+            Ok(state) => state.update(platform, ui, persistent_state),
+            Err(e) => e.update(platform, ui, persistent_state),
         }
     }
 }
@@ -335,7 +335,7 @@ fn update_theme(ctx: &egui::Context) {
     visuals.override_text_color = Some(Color32::LIGHT_GRAY);
     ctx.set_visuals(visuals);
 
-    let mut style = (*ctx.style()).clone();
+    let mut style = (*ctx.global_style()).clone();
     // Increase body font size
     style
         .text_styles
@@ -346,25 +346,10 @@ fn update_theme(ctx: &egui::Context) {
         .text_styles
         .entry(TextStyle::Heading)
         .and_modify(|e| e.size = HEADING_TEXT_SIZE);
-    ctx.set_style(style);
+    ctx.set_global_style(style);
 }
 
 impl<T: Platform> eframe::App for PickerApp<T> {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if !self.fixed_theme {
-            update_theme(ctx);
-            self.fixed_theme = true;
-        }
-
-        if let Some(state_or_error) = self.state.take() {
-            let new_state = state_or_error.update(&self.platform, ctx, &mut self.persistent_state);
-            self.state.replace(new_state);
-        } else {
-            // unlikely/impossible to get here, but let's clean up nicely if we do.
-            ctx.send_viewport_cmd(egui::ViewportCommand::Close)
-        }
-    }
-
     // Do not save window size/position, it can get messed up.
     fn persist_egui_memory(&self) -> bool {
         false
@@ -372,6 +357,21 @@ impl<T: Platform> eframe::App for PickerApp<T> {
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         self.store_persistent_data(storage)
+    }
+
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        if !self.fixed_theme {
+            update_theme(ui);
+            self.fixed_theme = true;
+        }
+
+        if let Some(state_or_error) = self.state.take() {
+            let new_state = state_or_error.update(&self.platform, ui, &mut self.persistent_state);
+            self.state.replace(new_state);
+        } else {
+            // unlikely/impossible to get here, but let's clean up nicely if we do.
+            ui.send_viewport_cmd(egui::ViewportCommand::Close)
+        }
     }
 }
 
