@@ -3,9 +3,9 @@
 
 <!--
 
-Copyright, Organization for Ethical Source
+SPDX-FileCopyrightText: Organization for Ethical Source
 
-SPDX-License-Identifier: CC BY-SA 4.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 
 -->
 
